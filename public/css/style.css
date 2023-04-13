@@ -545,7 +545,7 @@ navbar .logo {
   margin: 0 auto;
   display: flex;
   margin-top: 30px;
-  width: 500px;
+  width: 550px;
   background-color: #ffffff;
   border-radius: 10px;
   padding: 10px;
@@ -583,7 +583,7 @@ navbar .logo {
   background-color: #393e46;
 }
 
-.container-room .left-cont .footer .utils .nodisplay {
+.container-room .left-cont .footer .utils .nodisplay,.screenshare,.board-icon,.text-icon,.invite-icon,.raisehand-icon,.chat-icon,.team-icon {
   background-color: #d8d8d8;
   text-align: center;
   margin-left: 10px;
@@ -595,13 +595,13 @@ navbar .logo {
   transition: background-color 0.3s;
   transition: color 0.3s;
 }
-.container-room .left-cont .footer .utils .nodisplay:hover {
+.container-room .left-cont .footer .utils :where(.nodisplay,.screenshare,.board-icon,.text-icon,.invite-icon,.raisehand-icon,.chat-icon,.team-icon):hover {
   cursor: pointer;
   color: white;
   background-color: #393e46;
 }
 
-.container-room .left-cont .footer .utils .screenshare {
+/* .container-room .left-cont .footer .utils .screenshare {
   background-color: #d8d8d8;
   text-align: center;
   margin-left: 10px;
@@ -612,13 +612,13 @@ navbar .logo {
   border-radius: 100px;
   transition: background-color 0.3s;
   transition: color 0.3s;
-}
-.container-room .left-cont .footer .utils .screenshare:hover {
+} */
+/* .container-room .left-cont .footer .utils .screenshare:hover {
   cursor: pointer;
   color: white;
   background-color: #393e46;
-}
-.container-room .left-cont .footer .utils .board-icon {
+} */
+/* .container-room .left-cont .footer .utils .board-icon {
   background-color: #d8d8d8;
   text-align: center;
   color: #393e46;
@@ -629,14 +629,14 @@ navbar .logo {
   border-radius: 100px;
   transition: background-color 0.3s;
   transition: color 0.3s;
-}
-.container-room .left-cont .footer .utils .board-icon:hover {
+} */
+/* .container-room .left-cont .footer .utils .board-icon:hover {
   cursor: pointer;
   color: white;
   background-color: #393e46;
-}
+} */
 
-.container-room .left-cont .footer .utils .invite-icon {
+/* .container-room .left-cont .footer .utils .text-icon {
   background-color: #d8d8d8;
   text-align: center;
   color: #393e46;
@@ -647,8 +647,26 @@ navbar .logo {
   border-radius: 100px;
   transition: background-color 0.3s;
   transition: color 0.3s;
-}
-.container-room .left-cont .footer .utils .invite-icon:hover {
+} */
+/* .container-room .left-cont .footer .utils .text-icon:hover {
+  cursor: pointer;
+  color: white;
+  background-color: #393e46;
+} */
+
+/* .container-room .left-cont .footer .utils .invite-icon {
+  background-color: #d8d8d8;
+  text-align: center;
+  color: #393e46;
+  margin-left: 10px;
+  padding: 10px;
+  height: 40px;
+  width: 40px;
+  border-radius: 100px;
+  transition: background-color 0.3s;
+  transition: color 0.3s;
+} */
+/* .container-room .left-cont .footer .utils .invite-icon:hover {
   cursor: pointer;
   color: white;
   background-color: #393e46;
@@ -716,7 +734,7 @@ navbar .logo {
   background-color: #393e46;
   
   
-} 
+}  */
 
 
 
