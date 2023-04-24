@@ -233,6 +233,11 @@ function loadDoc(){
     
 }
 
+function getCursorColor() {
+    return ['blue', 'red', 'orange', 'green'][Math.floor(Math.random()*4)];
+  }
+
+  
     
     
 
@@ -723,7 +728,7 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
         const quill=loadQuill()
         provider.awareness.setLocalStateField('user',{              //username and color appears on user cursor
             name:username,
-            color:'green'
+            color:getCursorColor()
         })
         const binding= new QuillBinding(type,quill,provider.awareness)
         docs[roomid]={doc,provider,type,binding}                    //store document info
