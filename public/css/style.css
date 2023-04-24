@@ -436,6 +436,26 @@ navbar .logo {
 .container-room .left-cont .whiteboard-cont .colors-cont .clearboard:hover {
   cursor: pointer;
 }
+
+.container-room .left-cont #editorParent {
+  height: 85vh;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 50px;
+  min-height: 600px;
+  /* background-color: white; */
+  border-radius: 10px;
+  margin-top: 5vh;
+  
+}
+
+.container-room .left-cont #editorParent #editor{
+  background-color: white;
+}
+
+
 .container-room .left-cont .video-cont {
   display: grid;
   grid-template-columns: 1fr 1fr;

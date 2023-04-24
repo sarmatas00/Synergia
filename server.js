@@ -4,6 +4,7 @@ const express = require('express')
 const moment = require('moment');
 const socketio = require('socket.io');
 const PORT = process.env.PORT || 3000;
+const ysocketio= require("y-socket.io/dist/server").YSocketIO
 
 const http = require('https');
 const fs = require('fs');
@@ -20,6 +21,11 @@ const server = http.createServer(serverConfig, app);
 
 const io = socketio(server);
 
+//initialize YJS document synchronization library over socketIO
+const YSocketIO=new ysocketio(io)
+YSocketIO.initialize()
+
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 let rooms = {};
@@ -28,6 +34,8 @@ let socketname = {};
 let micSocket = {};
 let videoSocket = {};
 let roomBoard = {};
+let docs={};
+
 
 io.on('connect', socket => {
 

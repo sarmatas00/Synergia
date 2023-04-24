@@ -1,8 +1,14 @@
+import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.5.53/+esm'
+import {QuillBinding} from 'https://cdn.jsdelivr.net/npm/y-quill@0.1.5/+esm'
+import {SocketIOProvider} from 'https://cdn.jsdelivr.net/npm/y-socket.io@1.1.0/+esm'
+import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
+
 const socket = io();
 const myvideo = document.querySelector("#vd1");
 const roomid = params.get("room");
 let username;
 let sd = 1;
+let docs={};                                         
 const chatRoom = document.querySelector('.chat-cont');
 const sendButton = document.querySelector('.chat-send');
 const messageField = document.querySelector('.chat-input');
@@ -15,12 +21,14 @@ const audioButt = document.querySelector('.audio');
 const cutCall = document.querySelector('.cutcall');
 const screenShareButt = document.querySelector('.screenshare');
 const whiteboardButt = document.querySelector('.board-icon');
+const textIcon = document.querySelector('.text-icon');
 const inviteButt = document.getElementById('invite');
 const raiseButt = document.getElementById('Raise_Hand');
 const chatButt = document.getElementById('chat');
 const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
 const nodisplaybutt = document.getElementById('nodisplay');
+const textEditor = document.getElementById('editorParent');
 
 //whiteboard js start
 const whiteboardCont = document.querySelector('.whiteboard-cont');
@@ -43,6 +51,7 @@ const chatInputEmoji = {
 
 
 let boardVisisble = false;
+let editorVisible = false;
 
 whiteboardCont.style.visibility = 'hidden';
 
@@ -81,7 +90,7 @@ socket.on('getCanvas', url => {
         ctx.drawImage(img, 0, 0);
     }
 
-    console.log('got canvas', url)
+
 })
 
 function setColor(newcolor) {
@@ -167,6 +176,70 @@ socket.on('draw', (newX, newY, prevX, prevY, color, size) => {
 })
 
 //whiteboard js end
+
+//initialize quill editor
+function loadQuill(){
+    Quill.register('modules/cursors', QuillCursors)       //cursors for different users when editing
+    const toolbarOptions = [
+        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+        ['blockquote', 'code-block'],
+        [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+        [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+        [{ 'direction': 'rtl' }],                         // text direction
+        // array for drop-downs, empty array = defaults
+        [{ 'size': [] }],
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+        [{ 'font': [] }],
+        [{ 'align': [] }],
+        ['image', 'video'],
+        ['clean']                                         // remove formatting button
+      ];
+    const quill=new Quill('#editor',{                   //editor setup
+        theme:'snow',
+        modules:{
+            cursors:true,
+            toolbar:toolbarOptions
+        }
+    })
+    fitToParent(textEditor.children[0],100,8)           //toolbar takes 8vh of the container
+    fitToParent(textEditor.children[1],100,67)          //main editor takes 67vh of the container
+    textEditor.style.visibility='hidden'                //make editor hidden at the beginning
+    document.querySelector('.ql-toolbar').style.backgroundColor='white'         //white toolbar background
+    return quill
+}
+
+function fitToParent(element,width,height) {            //adjusts quill editors elements dimensions on page
+    element.style.width = `${width}%`;
+    element.style.height = `${height}vh`;
+    element.width = element.offsetWidth;
+    element.height = element.offsetHeight;
+}
+
+
+//create yjs document and connect it with the socket
+function loadDoc(){                 
+    const doc = new Y.Doc()
+    const provider= new SocketIOProvider('https://localhost:3000',roomid,doc,{
+        // disableBc: true,
+        // auth: { token: 'valid-token' },
+      })
+      
+    const type= doc.getText(roomid)
+
+    return {type,provider,doc}
+    
+}
+
+    
+    
+
+
+
+//end quill initialization
+
 
 let videoAllowed = 1;
 let nodispAllowed = 0;
@@ -643,6 +716,19 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
 
 
     console.log(cName);
+
+    //if room was just created or new user enters, create or load text editor and provider
+
+        const {type,provider,doc}=loadDoc()
+        const quill=loadQuill()
+        provider.awareness.setLocalStateField('user',{              //username and color appears on user cursor
+            name:username,
+            color:'green'
+        })
+        const binding= new QuillBinding(type,quill,provider.awareness)
+        docs[roomid]={doc,provider,type,binding}                    //store document info
+        // socket.emit('store-doc',{doc,type,provider:provider.awareness,roomid})
+
 	
 	
     if (conc) {
@@ -1131,8 +1217,28 @@ whiteboardButt.addEventListener('click', () => {
         boardVisisble = false;
     }
     else {
+        textEditor.style.visibility = 'hidden';
         whiteboardCont.style.visibility = 'visible';
         boardVisisble = true;
+        editorVisible = false;
+        docs[roomid].provider.disconnect()
+    }
+})
+
+//when user clicks editor button make it hidden or visible
+//also connect or disconnect the document socket provider accordingly
+textIcon.addEventListener('click', () => {
+    if (editorVisible) {
+        textEditor.style.visibility = 'hidden';
+        editorVisible = false;
+        docs[roomid].provider.disconnect()
+    }
+    else {
+        whiteboardCont.style.visibility = 'hidden';
+        textEditor.style.visibility = 'visible';
+        editorVisible = true;
+        boardVisisble = false;
+        docs[roomid].provider.connect()
     }
 })
 

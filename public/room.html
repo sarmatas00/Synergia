@@ -7,6 +7,7 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" async defer>
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
     <script>
         const params = new URLSearchParams(location.search);
@@ -123,6 +124,10 @@
 				//gl.stroke();
 	}
 	</script>
+
+            <div id="editorParent">
+                <div id="editor" height="1000" width="1000"></div>
+            </div>
 
             <div class="whiteboard-cont"><canvas id="whiteboard" height="1000" width="1000"></canvas>
                 <div class="colors-cont">
@@ -320,9 +325,11 @@
         <!-- End chat room -->
 
     </div>
-	
+
+    
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/room.js"></script>
+    <script src="js/room.js" type="module"></script>
 </body>
 
 </html>
