@@ -1,22 +1,13 @@
 const path = require('path');
 const express = require('express')
-//const http = require('http')
+const http = require('http')
 const moment = require('moment');
 const socketio = require('socket.io');
+var emoji = require('node-emoji');
 const PORT = process.env.PORT || 3000;
 
-const http = require('https');
-const fs = require('fs');
-
-
-// Yes, TLS is required
-const serverConfig = {
-  key: fs.readFileSync('key.pem'),
-  cert: fs.readFileSync('cert.pem'),
-};
-
 const app = express();
-const server = http.createServer(serverConfig, app);
+const server = http.createServer(app);
 
 const io = socketio(server);
 
@@ -81,6 +72,7 @@ io.on('connect', socket => {
     })
 
     socket.on('message', (msg, username, roomid) => {
+		msg=emoji.emojify(msg, null);
         io.to(roomid).emit('message', msg, username, moment().format(
             "h:mm a"
         ));

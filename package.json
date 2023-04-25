@@ -16,6 +16,7 @@
     "nodemon": "^2.0.4",
     "socket.io": "^2.3.0",
     "uuid": "^8.3.0",
+    "node-emoji": "^1.10.0",
     "webrtc-adapter": "^7.7.0"
   }
 }
