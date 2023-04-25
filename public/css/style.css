@@ -455,6 +455,16 @@ navbar .logo {
   background-color: white;
 }
 
+.container-room .left-cont #editorParent #editorSaveBtn{
+  position: relative;
+  bottom: 0;
+  right: -50%;
+  background-color: black;
+  color: white;
+  width: 40px;
+  height: 40px;
+}
+
 
 .container-room .left-cont .video-cont {
   display: grid;

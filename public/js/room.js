@@ -8,7 +8,8 @@ const myvideo = document.querySelector("#vd1");
 const roomid = params.get("room");
 let username;
 let sd = 1;
-let docs={};                                         
+let docs={};    
+let editor={}                                     
 const chatRoom = document.querySelector('.chat-cont');
 const sendButton = document.querySelector('.chat-send');
 const messageField = document.querySelector('.chat-input');
@@ -29,6 +30,7 @@ const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
 const nodisplaybutt = document.getElementById('nodisplay');
 const textEditor = document.getElementById('editorParent');
+const textEditorSaveBtn = document.getElementById('editorSaveBtn');
 
 //whiteboard js start
 const whiteboardCont = document.querySelector('.whiteboard-cont');
@@ -197,18 +199,75 @@ function loadQuill(){
         ['image', 'video'],
         ['clean']                                         // remove formatting button
       ];
-    const quill=new Quill('#editor',{                   //editor setup
+    editor=new Quill('#editor',{                   //editor setup
         theme:'snow',
         modules:{
             cursors:true,
             toolbar:toolbarOptions
         }
     })
+    
     fitToParent(textEditor.children[0],100,8)           //toolbar takes 8vh of the container
     fitToParent(textEditor.children[1],100,67)          //main editor takes 67vh of the container
     textEditor.style.visibility='hidden'                //make editor hidden at the beginning
     document.querySelector('.ql-toolbar').style.backgroundColor='white'         //white toolbar background
-    return quill
+    
+}
+
+function setMultipleCursors(){                              //setup new cursor when a user enters the room                               
+    const cursors = editor.getModule("cursors");
+    const id=`${roomid}-${username}`
+    cursors.createCursor(id, username, getCursorColor(0));
+    editor.on("selection-change", function (range, oldRange, source) {      //track cursor location changes
+        if(range){
+            cursors.moveCursor(id, range);                                  //move cursor to new location
+            socket.emit('cursor location',roomid,id,range,oldRange)         //broadcast new location to other users
+            if(editorVisible){                                              //cursor appears if editor is visible
+                cursors.toggleFlag(id, true);
+            }else{
+                cursors.toggleFlag(id, false);
+
+            }
+        }
+     });
+}
+
+
+
+socket.on('update cursors',(cursors)=>{                             //update cursors of other users that use the editor in real time
+    const id=`${roomid}-${username}`
+    const Cursors=editor.getModule("cursors")
+    let colorIndex=1
+    for(let cursor of cursors){
+        if(cursor.id!==id){
+            const Id=cursor.id
+            const Range=cursor.range
+            Cursors.createCursor(Id,[...Id].slice([...Id].indexOf('-')+1).join(''),getCursorColor(colorIndex++))
+            Cursors.moveCursor(Id,Range); 
+            if(editorVisible){
+                Cursors.toggleFlag(Id, true);
+            }else{
+                Cursors.toggleFlag(Id, false);
+
+            }
+        }
+    }
+    
+})
+
+socket.on('remove user cursor',(oldID)=>{                           //remove cursor of a user that has exited the room
+    const Cursors=editor.getModule("cursors")
+    Cursors.removeCursor(
+        Cursors.cursors().find(cursor=>cursor.id===oldID).id
+    )
+})
+
+
+function hideUserCursors(){                                         //gets called when user closes editor to hide cursors from the screen
+    const Cursors=editor.getModule("cursors")
+    Cursors.cursors().forEach((cursor)=>{
+        Cursors.toggleFlag(cursor.id,false)
+    })
 }
 
 function fitToParent(element,width,height) {            //adjusts quill editors elements dimensions on page
@@ -233,14 +292,13 @@ function loadDoc(){
     
 }
 
-function getCursorColor() {
-    return ['blue', 'red', 'orange', 'green'][Math.floor(Math.random()*4)];
+function getCursorColor(index) {                                        
+    
+    return ['blue', 'red', 'orange', 'green','beige','aqua'][index];
   }
 
   
     
-    
-
 
 
 //end quill initialization
@@ -700,7 +758,7 @@ socket.on('new icecandidate', handleNewIceCandidate);
 socket.on('video-answer', handleVideoAnswer);
 
 
-socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodispinfo) => {
+socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodispinfo,docInfo) => {
     socket.emit('getCanvas');
     if (cnames)
         cName = cnames;
@@ -719,22 +777,34 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
 		
 	 	
 
-
-    console.log(cName);
-
-    //if room was just created or new user enters, create or load text editor and provider
-
+    //if room was just created or new user enters, create or load text editor and provider and set cursors
+    if(docInfo==undefined){
         const {type,provider,doc}=loadDoc()
-        const quill=loadQuill()
+        loadQuill()
+        setMultipleCursors()
         provider.awareness.setLocalStateField('user',{              //username and color appears on user cursor
             name:username,
-            color:getCursorColor()
+            color:getCursorColor(0)
         })
-        const binding= new QuillBinding(type,quill,provider.awareness)
+        const binding= new QuillBinding(type,editor,provider.awareness)
         docs[roomid]={doc,provider,type,binding}                    //store document info
-        // socket.emit('store-doc',{doc,type,provider:provider.awareness,roomid})
+        socket.emit('store-doc',{doc,type,provider:provider.awareness,roomid})
+    }else{
+        const {doc,type,provider}=docInfo
+        loadQuill()
+        setMultipleCursors(editor)
+        provider.setLocalStateField('user',{              //username and color appears on user cursor
+            name:username,
+            color:getCursorColor(0)
+        })
+        const binding= new QuillBinding(type,editor,provider)
 
-	
+    }
+    
+
+    
+    
+
 	
     if (conc) {
         await conc.forEach(sid => {
@@ -1222,6 +1292,7 @@ whiteboardButt.addEventListener('click', () => {
         boardVisisble = false;
     }
     else {
+        hideUserCursors()
         textEditor.style.visibility = 'hidden';
         whiteboardCont.style.visibility = 'visible';
         boardVisisble = true;
@@ -1234,6 +1305,7 @@ whiteboardButt.addEventListener('click', () => {
 //also connect or disconnect the document socket provider accordingly
 textIcon.addEventListener('click', () => {
     if (editorVisible) {
+        hideUserCursors()
         textEditor.style.visibility = 'hidden';
         editorVisible = false;
         docs[roomid].provider.disconnect()
@@ -1245,6 +1317,20 @@ textIcon.addEventListener('click', () => {
         boardVisisble = false;
         docs[roomid].provider.connect()
     }
+})
+
+
+textEditorSaveBtn.addEventListener('click',()=>{                            //save button on text editor to save document data as text file
+    const filename=`${username}.txt`;                                       //user's username as file name
+    const content=editor.getContents().ops[0].insert;                       //editor content data
+    const myFile=new Blob([content],{type:'text/plain'});
+
+    window.URL = window.URL || window.webkitURL;
+    const dlBtn = document.getElementById("download");
+
+    dlBtn.setAttribute("href", window.URL.createObjectURL(myFile));
+    dlBtn.setAttribute("download", filename);
+
 })
 
 cutCall.addEventListener('click', () => {
