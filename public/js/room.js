@@ -30,7 +30,6 @@ const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
 const nodisplaybutt = document.getElementById('nodisplay');
 const textEditor = document.getElementById('editorParent');
-const textEditorSaveBtn = document.getElementById('editorSaveBtn');
 
 //whiteboard js start
 const whiteboardCont = document.querySelector('.whiteboard-cont');
@@ -197,8 +196,10 @@ function loadQuill(){
         [{ 'font': [] }],
         [{ 'align': [] }],
         ['image', 'video'],
-        ['clean']                                         // remove formatting button
+        ['clean'],                                         // remove formatting button
+        ['save']                                            //save button
       ];
+    
     editor=new Quill('#editor',{                   //editor setup
         theme:'snow',
         modules:{
@@ -206,6 +207,9 @@ function loadQuill(){
             toolbar:toolbarOptions
         }
     })
+    const textEditorSaveBtn = document.querySelector('.ql-save');               //configure button to save document data 
+    setUpSaveBtn(textEditorSaveBtn)
+    textEditorSaveBtn.addEventListener('click',(evt)=>btnSaveEvt(evt))  
     
     fitToParent(textEditor.children[0],100,8)           //toolbar takes 8vh of the container
     fitToParent(textEditor.children[1],100,67)          //main editor takes 67vh of the container
@@ -1319,19 +1323,35 @@ textIcon.addEventListener('click', () => {
     }
 })
 
+    //add elements to save button on editor's toolbar
+    function setUpSaveBtn(target){
+        if(target){
+            const anchor=document.createElement('a')
+            anchor.setAttribute('href','#')
+            anchor.setAttribute('id','download')
+            anchor.innerHTML='<i style="font-size:18px;color:black" class="fa">&#xf0c7;</i>'
+            target.appendChild(anchor)
+        }
 
-textEditorSaveBtn.addEventListener('click',()=>{                            //save button on text editor to save document data as text file
-    const filename=`${username}.txt`;                                       //user's username as file name
-    const content=editor.getContents().ops[0].insert;                       //editor content data
-    const myFile=new Blob([content],{type:'text/plain'});
 
-    window.URL = window.URL || window.webkitURL;
-    const dlBtn = document.getElementById("download");
+    }
 
-    dlBtn.setAttribute("href", window.URL.createObjectURL(myFile));
-    dlBtn.setAttribute("download", filename);
 
-})
+                        //save button on text editor to save document data as text file
+    function btnSaveEvt(evt){
+        const filename=`${username}.txt`;                                       //user's username as file name
+        const content=editor.getContents().ops[0].insert;                       //editor content data
+        const myFile=new Blob([content],{type:'text/plain'});
+    
+        window.URL = window.URL || window.webkitURL;
+            const dlBtn = document.getElementById("download");
+            dlBtn.setAttribute("href", window.URL.createObjectURL(myFile));
+            dlBtn.setAttribute("download", filename);
+    
+    }
+    
+
+
 
 cutCall.addEventListener('click', () => {
     location.href = '/';

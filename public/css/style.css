@@ -455,15 +455,7 @@ navbar .logo {
   background-color: white;
 }
 
-.container-room .left-cont #editorParent #editorSaveBtn{
-  position: relative;
-  bottom: 0;
-  right: -50%;
-  background-color: black;
-  color: white;
-  width: 40px;
-  height: 40px;
-}
+
 
 
 .container-room .left-cont .video-cont {
@@ -823,6 +815,8 @@ navbar .logo {
   width: 30%;
   background-color: #ffffff;
   height: 100vh;
+  z-index: 999;
+  border: 1px solid black;
   /* Track */
   /* Handle */
   /* Handle on hover */
