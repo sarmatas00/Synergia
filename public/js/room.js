@@ -12,7 +12,7 @@ let docs={};
 let editor={}                                     
 const chatRoom = document.querySelector('.chat-cont');
 const sendButton = document.querySelector('.chat-send');
-const messageField = document.querySelector('.chat-input');
+const messageField = document.getElementById('chatinput');
 const videoContainer = document.querySelector('#vcont');
 const overlayContainer = document.querySelector('#overlay')
 const continueButt = document.querySelector('.continue-name');
@@ -197,7 +197,8 @@ function loadQuill(){
         [{ 'align': [] }],
         ['image', 'video'],
         ['clean'],                                         // remove formatting button
-        ['save']                                            //save button
+        ['save'],                                          //save button
+        ['close']                                            //close button
       ];
     
     editor=new Quill('#editor',{                   //editor setup
@@ -209,10 +210,14 @@ function loadQuill(){
     })
     const textEditorSaveBtn = document.querySelector('.ql-save');               //configure button to save document data 
     setUpSaveBtn(textEditorSaveBtn)
-    textEditorSaveBtn.addEventListener('click',(evt)=>btnSaveEvt(evt))  
+    textEditorSaveBtn.addEventListener('click',(evt)=>btnSaveEvt(evt))
+    
+    const textEditorCloseBtn=document.querySelector('.ql-close')                //configure and style button that closes editor
+    textEditorCloseBtn.innerHTML='<div class="nav-cancel is-active" id="nav-cancel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg></div>'
+    textEditorCloseBtn.addEventListener('click',()=>{textIcon.click()})
     
     fitToParent(textEditor.children[0],100,8)           //toolbar takes 8vh of the container
-    fitToParent(textEditor.children[1],100,67)          //main editor takes 67vh of the container
+    fitToParent(textEditor.children[1],100,73)          //main editor takes 67vh of the container
     textEditor.style.visibility='hidden'                //make editor hidden at the beginning
     document.querySelector('.ql-toolbar').style.backgroundColor='white'         //white toolbar background
     
@@ -427,12 +432,20 @@ continueButt.addEventListener('click', () => {
 
 })
 
-nameField.addEventListener("keyup", function (event) {
-    if (event.keyCode === 13) {
-        event.preventDefault();
+// nameField.addEventListener("keyup", function (event) {                           //event keycodes are deprecated
+//     if (event.keyCode === 13) {
+//         event.preventDefault();
+//         continueButt.click();
+//     }
+// });
+
+window.addEventListener('keyup',(evt)=>{                                
+    if(evt.code==='Enter' && evt.target==nameField){
+        console.log(true);
         continueButt.click();
+
     }
-});
+})
 
 socket.on('user count', count => {
     if (count > 1) {
@@ -977,17 +990,25 @@ socket.on('remove peer', sid => {
 })
 
 sendButton.addEventListener('click', () => {
-    const msg = messageField.value;
-    messageField.value = '';
-    socket.emit('message', msg, username, roomid);
+    const msg = messageField.value.trim();                              //if message is not empty string
+    if(msg!==""){
+        messageField.value = '';
+        socket.emit('message', msg, username, roomid);
+    }
 })
 
-messageField.addEventListener("keyup", function (event) {
-    if (event.keyCode === 13) {
-        event.preventDefault();
+// messageField.addEventListener("keyup", function (event) {                //event keycodes are deprecated
+//     if (event.keyCode === 13) {
+//         event.preventDefault();
+//         sendButton.click();
+//     }
+// });
+
+window.addEventListener('keyup',(evt)=>{                                
+    if(evt.code==='Enter' && evt.target==messageField){
         sendButton.click();
     }
-});
+})
 
 /*
 // chat room emoji picker

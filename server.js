@@ -3,6 +3,7 @@ const express = require('express')
 //const http = require('http')
 const moment = require('moment');
 const socketio = require('socket.io');
+const emoji = require('node-emoji');
 const PORT = process.env.PORT || 3000;
 const ysocketio= require("y-socket.io/dist/server").YSocketIO
 
@@ -90,6 +91,9 @@ io.on('connect', socket => {
     })
 
     socket.on('message', (msg, username, roomid) => {
+		msg=emoji.unemojify(msg, null);
+        //todo: add msg to db and then emojify again to show actual emoji in chat
+		msg=emoji.emojify(msg, null);
         io.to(roomid).emit('message', msg, username, moment().format(
             "h:mm a"
         ));
@@ -159,7 +163,6 @@ io.on('connect', socket => {
             socket.to(socketroom[socket.id]).emit('update cursors',cursors.filter(cursor=>cursor.roomid===roomid))
         }
     })
-
     
 })
 

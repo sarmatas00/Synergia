@@ -443,7 +443,7 @@ navbar .logo {
   position: absolute;
   left: 0;
   top: 0;
-  padding: 50px;
+  padding: 0 50px 50px;
   min-height: 600px;
   /* background-color: white; */
   border-radius: 10px;
@@ -453,6 +453,10 @@ navbar .logo {
 
 .container-room .left-cont #editorParent #editor{
   background-color: white;
+}
+
+.ql-editor{
+  padding-top: 20px !important;
 }
 
 
@@ -892,27 +896,40 @@ navbar .logo {
   box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.15);
 }
 .container-room .right-cont .chat-input-cont .ci-cont {
-  width: 80%;
+  width: 90%;
 }
 .container-room .right-cont .chat-input-cont .ci-send {
   width: 20%;
   margin-left: 20px;
 }
-.container-room .right-cont .chat-input-cont .chat-input {
+.container-room .right-cont .chat-input-cont .two.uk-textarea.uk-margin {
   width: 100%;
   height: 36px;
   font-size: 0.85rem;
-  padding: 4px 10px;
+  padding: 2px 5px;
   border: none;
   border-bottom: 3px solid #4ecca3;
   color: #393e46;
 }
-.container-room .right-cont .chat-input-cont .chat-input:focus {
+.container-room .right-cont .chat-input-cont .two.uk-textarea.uk-margin:focus {
   outline: none;
+}
+.container-room .right-cont .chat-input-cont .second-btn {
+  background: white !important;
+  border: none;
+  border-bottom: 3px solid #4ecca3;
+}
+.container-room .right-cont .chat-input-cont .second-btn:hover {
+  cursor: pointer;
+  background: #4ecca3 !important;
+  border-radius: 50%;
+}
+.fg-emoji-container{
+  transform: translateX(-110%) translateY(-2%);
 }
 .container-room .right-cont .chat-input-cont .chat-send {
   height: 36px;
-  padding: 5px 20px;
+  padding: 5px 2px;
   border: none;
   background-color: white;
   color: #4ecca3;
@@ -1212,9 +1229,10 @@ ul.sub li a:hover {
 
 /* sub display*/
 ul.primary li:hover ul {
-  display: block;
+  display: grid ;
   background: #fff;
   width: 150px;
+  text-align: center;
 }
 
 /* keeps the tab background white */
@@ -1236,10 +1254,12 @@ ul.primary li:hover > a{
   .wrap {
     width: 100%;
     margin-top: 0px;
+
   }
   
    li {
     float: none;
+
   }
   
   ul.primary li:hover a {

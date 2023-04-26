@@ -8,6 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/style.css">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" async defer>
+	<link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
+
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
     <script>
         const params = new URLSearchParams(location.search);
@@ -65,9 +67,9 @@
 				<li>
 					<a href="">Services</a>
 					<ul class="sub">
-						<li><a href="">SynergiaEdit</a></li>
-						<li><a href="">SynergiaChat</a></li>
-                        <li><a href="">SynergiaCoding</a></li>
+						<li><a href="">SynEdit</a></li>
+						<li><a href="">SynChat</a></li>
+                        <li><a href="">SynCoding</a></li>
 					</ul>
 				</li>
 				
@@ -99,10 +101,10 @@
 					<div class="nametag" > 
 					    <canvas id="myCanvas" width="50" height="50" >
 						</canvas>
-					    <div id="raiseHand"> <img  id = "imH"  width="50" height="50" src="raisedhand.png" >  </div> 
+					    <div id="raiseHand"> <img  id = "imH"  width="50" height="50" src="img/raisedhand.png" >  </div> 
 					    <div>&nbsp;&nbsp</div>
 					    <div id ="myname"> yourname  </div>
-						<div id="emoface"  ><img  id = "iml"  width="50" height="50" src="neutral.png" > </div>
+						<div id="emoface"  ><img  id = "iml"  width="50" height="50" src="img/neutral.png" > </div>
 						 <!-- <div id="raiseH"><img  id = "imHH"  width="50" height="50" src="raisedhand.png" >  </div> -->
 				  
 					</div>	
@@ -221,8 +223,13 @@
             </div>
 			
             <div class="chat-input-cont">
-                <div class="ci-cont"><input type="text" class="chat-input" placeholder="Type chat here.."></div>
-                <div class="ci-send"><button class="chat-send">Send</button></div>
+                <button style="background: #4ecca3;  width: 35px" class="second-btn uk-button uk-button-primary" >😃</button>
+                <!-- <div class="ci-cont" id="chat"><input type="text" class="chat-input" placeholder="Type chat here.."></div> -->
+                 <div class="ci-cont" cols="70">
+				<!-- <input type="textarea" class="two uk-textarea uk-margin" placeholder="Type chat here.."> -->
+				<textarea name="" id="chatinput" class="two uk-textarea uk-margin" autofocus></textarea>
+				 </div> 
+                 <div class="ci-send"><button class="chat-send">Send</button></div>
             </div>
 			
         </div> 
@@ -244,6 +251,7 @@
            
 			
         </div> 
+        
 		
 		  <!-- Start chat room 
         https://codepen.io/sajadhsm/pen/odaBdd
@@ -325,8 +333,22 @@
         <!-- End chat room -->
 
     </div>
+    <script src="js/vanillaEmojiPicker.js"></script>
+		<script>
+			new EmojiPicker({
+				trigger: [
+					{
+						selector: '.second-btn',
+						insertInto: '.two'
+					}
+				],
+				closeButton: true,
+            //specialButtons: green
+			});
 
-    
+		</script>
+
+	<!-- <script  src="hark.bundle.js"></script> -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/room.js" type="module"></script>
