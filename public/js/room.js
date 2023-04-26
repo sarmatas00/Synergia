@@ -312,6 +312,16 @@ function getCursorColor(index) {
 
 //end quill initialization
 
+//find the id of the video player that matches the user who is currently speaking and put a border in place 
+//or remove it if the user has stopped speaking
+socket.on('detect-speaker',(sid,isSpeaking)=>{
+    if(isSpeaking){
+        document.getElementById(sid[0]).style.border='3px solid #4ecca3'
+    }else{
+        document.getElementById(sid[0]).style.border='none'
+    }
+})
+
 
 let videoAllowed = 1;
 let nodispAllowed = 0;
@@ -441,7 +451,6 @@ continueButt.addEventListener('click', () => {
 
 window.addEventListener('keyup',(evt)=>{                                
     if(evt.code==='Enter' && evt.target==nameField){
-        console.log(true);
         continueButt.click();
 
     }
@@ -497,6 +506,20 @@ function startCall() {
                         videoTrackSent[key] = track;
                 }
             })
+            
+            //initiate hark library for the first user who created the room
+            //every time he speaks and stops speaking send a notice to other users
+            //and at the same time put or remove a border from his video box
+            const options={};
+                const speechEvents=hark(localStream,options);
+                speechEvents.on('speaking',()=>{
+                    socket.emit('detect-speaker',roomid,true)
+                    document.querySelector('.video-box').style.border='3px solid #4ecca3'
+                })
+                speechEvents.on('stopped_speaking',()=>{
+                    socket.emit('detect-speaker',roomid,false)
+                    document.querySelector('.video-box').style.border='none'
+                })
 
         })
         .catch(handleGetUserMediaError);
@@ -948,6 +971,20 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
                 myvideo.srcObject = localStream;
                 myvideo.muted = true;
                 mystream = localStream;
+                
+                //initiate hark library for every other user that enters the room
+                //every time he speaks and stops speaking send a notice to other users
+                //and at the same time put or remove a border from his video box
+                const options={};
+                const speechEvents=hark(localStream,options);
+                speechEvents.on('speaking',()=>{
+                    socket.emit('detect-speaker',roomid,true)
+                    document.querySelector('.video-box').style.border='3px solid #4ecca3'
+                })
+                speechEvents.on('stopped_speaking',()=>{
+                    socket.emit('detect-speaker',roomid,false)
+                    document.querySelector('.video-box').style.border='none'
+                })
             })
             .catch(handleGetUserMediaError);
     }
