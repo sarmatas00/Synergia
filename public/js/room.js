@@ -30,6 +30,7 @@ const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
 const nodisplaybutt = document.getElementById('nodisplay');
 const textEditor = document.getElementById('editorParent');
+const synChat=document.getElementById('synChat');
 
 //whiteboard js start
 const whiteboardCont = document.querySelector('.whiteboard-cont');
@@ -303,7 +304,7 @@ function loadDoc(){
 
 function getCursorColor(index) {                                        
     
-    return ['blue', 'red', 'orange', 'green','beige','aqua'][index];
+    return ['blue', 'red', 'orange', 'green','orange','gray','beige','aqua','cyan','magenta'][index];
   }
 
   
@@ -507,19 +508,9 @@ function startCall() {
                 }
             })
             
-            //initiate hark library for the first user who created the room
-            //every time he speaks and stops speaking send a notice to other users
-            //and at the same time put or remove a border from his video box
-            const options={};
-                const speechEvents=hark(localStream,options);
-                speechEvents.on('speaking',()=>{
-                    socket.emit('detect-speaker',roomid,true)
-                    document.querySelector('.video-box').style.border='3px solid #4ecca3'
-                })
-                speechEvents.on('stopped_speaking',()=>{
-                    socket.emit('detect-speaker',roomid,false)
-                    document.querySelector('.video-box').style.border='none'
-                })
+            //initiate hark library (speech detection) for the first user who created the room
+            initiateHark(localStream);
+            
 
         })
         .catch(handleGetUserMediaError);
@@ -972,19 +963,8 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
                 myvideo.muted = true;
                 mystream = localStream;
                 
-                //initiate hark library for every other user that enters the room
-                //every time he speaks and stops speaking send a notice to other users
-                //and at the same time put or remove a border from his video box
-                const options={};
-                const speechEvents=hark(localStream,options);
-                speechEvents.on('speaking',()=>{
-                    socket.emit('detect-speaker',roomid,true)
-                    document.querySelector('.video-box').style.border='3px solid #4ecca3'
-                })
-                speechEvents.on('stopped_speaking',()=>{
-                    socket.emit('detect-speaker',roomid,false)
-                    document.querySelector('.video-box').style.border='none'
-                })
+                //initiate hark library (speech detection) for every other user that enters the room
+                initiateHark(localStream);
             })
             .catch(handleGetUserMediaError);
     }
@@ -1407,10 +1387,37 @@ textIcon.addEventListener('click', () => {
             dlBtn.setAttribute("download", filename);
     
     }
+
     
 
 
 
 cutCall.addEventListener('click', () => {
     location.href = '/';
+})
+
+
+//every time a user speaks and stops speaking send a notice to other users
+//and at the same time put or remove a border from his video box
+function initiateHark(localStream){
+    const options={};
+    const speechEvents=hark(localStream,options);
+    speechEvents.on('speaking',()=>{
+        socket.emit('detect-speaker',roomid,true)
+        document.querySelector('.video-box').style.border='3px solid #4ecca3'
+    })
+    speechEvents.on('stopped_speaking',()=>{
+        socket.emit('detect-speaker',roomid,false)
+        document.querySelector('.video-box').style.border='none'
+    })
+}
+
+
+
+
+
+synChat.addEventListener('click',(evt)=>{
+    evt.preventDefault();
+    location.href = `/chat.html?room=${roomid}`;
+
 })

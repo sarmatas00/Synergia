@@ -165,8 +165,9 @@ io.on('connect', socket => {
     })
 
     socket.on('detect-speaker',(roomid,isSpeaking)=>{                           //transmit to users in a room who is currently speaking
-        socket.to(roomid).emit('detect-speaker', rooms[roomid].filter(pid => pid == socket.id),isSpeaking)              //transmit the sid of user speaking
-        
+        if(rooms[roomid]){
+            socket.to(roomid).emit('detect-speaker', rooms[roomid].filter(pid => pid == socket.id),isSpeaking)              //transmit the sid of user speaking
+        }
     })
     
 })
