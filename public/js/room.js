@@ -30,7 +30,6 @@ const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
 const nodisplaybutt = document.getElementById('nodisplay');
 const textEditor = document.getElementById('editorParent');
-const synChat=document.getElementById('synChat');
 
 //whiteboard js start
 const whiteboardCont = document.querySelector('.whiteboard-cont');
@@ -1412,12 +1411,3 @@ function initiateHark(localStream){
     })
 }
 
-
-
-
-
-synChat.addEventListener('click',(evt)=>{
-    evt.preventDefault();
-    location.href = `/chat.html?room=${roomid}`;
-
-})
