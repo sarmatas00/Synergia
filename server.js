@@ -154,9 +154,9 @@ io.on('connect', socket => {
     //and emits it to all the other users in the room in order to support multiple cursors
     socket.on('cursor location',(roomid,id,range,oldRange)=>{
         if(cursors.find(cursor=>cursor.id===id) && range!==oldRange){               //if the cursor exists already and we have a new location
-            cursors=cursors.map(cursor=>cursor.id===id?{roomid,id,range,socketID:socket.id}:cursor)         //alter cursors array with the new location
+            cursors=cursors.map(cursor=>cursor.id===id?{roomid,id,range,socketID:socket.id,hasMoved:true}:cursor)         //alter cursors array with the new location
         }else{                                                                      //register new cursor if a user has just started using the editor
-            cursors.push({roomid,id,range,socketID:socket.id})
+            cursors.push({roomid,id,range,socketID:socket.id,hasMoved:false})
         }
 
         if(range!==oldRange){                                                   //send the new location to the other users

@@ -197,8 +197,7 @@ function loadQuill(){
         [{ 'align': [] }],
         ['image', 'video'],
         ['clean'],                                         // remove formatting button
-        ['save'],                                          //save button
-        ['close']                                            //close button
+        ['save']                                          //save button
       ];
     
     editor=new Quill('#editor',{                   //editor setup
@@ -212,14 +211,13 @@ function loadQuill(){
     setUpSaveBtn(textEditorSaveBtn)
     textEditorSaveBtn.addEventListener('click',(evt)=>btnSaveEvt(evt))
     
-    const textEditorCloseBtn=document.querySelector('.ql-close')                //configure and style button that closes editor
+    const textEditorCloseBtn=document.querySelector('#ql-close')                //configure and style button that closes editor
     textEditorCloseBtn.innerHTML='<div class="nav-cancel is-active" id="nav-cancel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg></div>'
     textEditorCloseBtn.addEventListener('click',()=>{textIcon.click()})
     
     fitToParent(textEditor.children[0],100,8)           //toolbar takes 8vh of the container
     fitToParent(textEditor.children[1],100,73)          //main editor takes 67vh of the container
     textEditor.style.visibility='hidden'                //make editor hidden at the beginning
-    document.querySelector('.ql-toolbar').style.backgroundColor='white'         //white toolbar background
     
 }
 
@@ -248,7 +246,7 @@ socket.on('update cursors',(cursors)=>{                             //update cur
     const Cursors=editor.getModule("cursors")
     let colorIndex=1
     for(let cursor of cursors){
-        if(cursor.id!==id){
+        if(cursor.id!==id && cursor.hasMoved){
             const Id=cursor.id
             const Range=cursor.range
             Cursors.createCursor(Id,[...Id].slice([...Id].indexOf('-')+1).join(''),getCursorColor(colorIndex++))
