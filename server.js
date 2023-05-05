@@ -3,7 +3,9 @@ const express = require('express')
 //const http = require('http')
 const moment = require('moment');
 const socketio = require('socket.io');
+const emoji = require('node-emoji');
 const PORT = process.env.PORT || 3000;
+const ysocketio= require("y-socket.io/dist/server").YSocketIO
 
 const http = require('https');
 const fs = require('fs');
@@ -20,6 +22,11 @@ const server = http.createServer(serverConfig, app);
 
 const io = socketio(server);
 
+//initialize YJS document synchronization library over socketIO
+const YSocketIO=new ysocketio(io)
+YSocketIO.initialize()
+
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 let rooms = {};
@@ -28,6 +35,9 @@ let socketname = {};
 let micSocket = {};
 let videoSocket = {};
 let roomBoard = {};
+let docs={};
+let cursors=[];
+
 
 io.on('connect', socket => {
 
@@ -44,15 +54,15 @@ io.on('connect', socket => {
             socket.to(roomid).emit('message', `${username} joined the room.`, 'Bot', moment().format(
                 "h:mm a"
             ));
-            io.to(socket.id).emit('join room', rooms[roomid].filter(pid => pid != socket.id), socketname, micSocket, videoSocket);
+            io.to(socket.id).emit('join room', rooms[roomid].filter(pid => pid != socket.id), socketname, micSocket, videoSocket,docs[roomid]);
         }
         else {
             rooms[roomid] = [socket.id];
-            io.to(socket.id).emit('join room', null, null, null, null);
+            io.to(socket.id).emit('join room', null, null, null, null,null);
         }
 
         io.to(roomid).emit('user count', rooms[roomid].length);
-
+        
     });
 
     socket.on('action', msg => {
@@ -81,6 +91,9 @@ io.on('connect', socket => {
     })
 
     socket.on('message', (msg, username, roomid) => {
+		msg=emoji.unemojify(msg, null);
+        //todo: add msg to db and then emojify again to show actual emoji in chat
+		msg=emoji.emojify(msg, null);
         io.to(roomid).emit('message', msg, username, moment().format(
             "h:mm a"
         ));
@@ -112,12 +125,51 @@ io.on('connect', socket => {
         var index = rooms[socketroom[socket.id]].indexOf(socket.id);
         rooms[socketroom[socket.id]].splice(index, 1);
         io.to(socketroom[socket.id]).emit('user count', rooms[socketroom[socket.id]].length);
-        delete socketroom[socket.id];
         console.log('--------------------');
-        console.log(rooms[socketroom[socket.id]]);
+
+        if(rooms[socketroom[socket.id]]==undefined){               //remove document info and cursor locations when room has emptied
+            cursors=cursors.filter(cursor=>cursor.roomid!==socketroom[socket.id])
+            delete docs[socketroom[socket.id]]
+        }else{
+            if(cursors.some((cursor)=>cursor.socketID===socket.id)){            //if a user exits but the room still exists
+                socket.to(socketroom[socket.id]).emit('remove user cursor',cursors.find((cursor)=>cursor.socketID===socket.id).id)          //find cursor info and broadcast it to other users to remove it
+                cursors=cursors.filter((cursor)=>cursor.socketID!==socket.id)       //also remove it from cursors array
+            }
+
+        }
+        
+        delete socketroom[socket.id];
 
         //toDo: push socket.id out of rooms
     });
+
+    //when room gets created, store new document data to emit to other users
+    socket.on('store-doc',(docData)=>{
+        const {doc,type,provider,roomid}=docData;
+        docs[roomid]={doc,type,provider};
+        
+    })
+
+    //for every user change in the editor, this event tracks the new pointer location in the editor
+    //and emits it to all the other users in the room in order to support multiple cursors
+    socket.on('cursor location',(roomid,id,range,oldRange)=>{
+        if(cursors.find(cursor=>cursor.id===id) && range!==oldRange){               //if the cursor exists already and we have a new location
+            cursors=cursors.map(cursor=>cursor.id===id?{roomid,id,range,socketID:socket.id,hasMoved:true}:cursor)         //alter cursors array with the new location
+        }else{                                                                      //register new cursor if a user has just started using the editor
+            cursors.push({roomid,id,range,socketID:socket.id,hasMoved:false})
+        }
+
+        if(range!==oldRange){                                                   //send the new location to the other users
+            socket.to(socketroom[socket.id]).emit('update cursors',cursors.filter(cursor=>cursor.roomid===roomid))
+        }
+    })
+
+    socket.on('detect-speaker',(roomid,isSpeaking)=>{                           //transmit to users in a room who is currently speaking
+        if(rooms[roomid]){
+            socket.to(roomid).emit('detect-speaker', rooms[roomid].filter(pid => pid == socket.id),isSpeaking)              //transmit the sid of user speaking
+        }
+    })
+    
 })
 
 

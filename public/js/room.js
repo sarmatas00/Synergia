@@ -1,11 +1,18 @@
+import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.5.53/+esm'
+import {QuillBinding} from 'https://cdn.jsdelivr.net/npm/y-quill@0.1.5/+esm'
+import {SocketIOProvider} from 'https://cdn.jsdelivr.net/npm/y-socket.io@1.1.0/+esm'
+import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
+
 const socket = io();
 const myvideo = document.querySelector("#vd1");
 const roomid = params.get("room");
 let username;
 let sd = 1;
+let docs={};    
+let editor={}                                     
 const chatRoom = document.querySelector('.chat-cont');
 const sendButton = document.querySelector('.chat-send');
-const messageField = document.querySelector('.chat-input');
+const messageField = document.getElementById('chatinput');
 const videoContainer = document.querySelector('#vcont');
 const overlayContainer = document.querySelector('#overlay')
 const continueButt = document.querySelector('.continue-name');
@@ -15,12 +22,14 @@ const audioButt = document.querySelector('.audio');
 const cutCall = document.querySelector('.cutcall');
 const screenShareButt = document.querySelector('.screenshare');
 const whiteboardButt = document.querySelector('.board-icon');
+const textIcon = document.querySelector('.text-icon');
 const inviteButt = document.getElementById('invite');
 const raiseButt = document.getElementById('Raise_Hand');
 const chatButt = document.getElementById('chat');
 const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
 const nodisplaybutt = document.getElementById('nodisplay');
+const textEditor = document.getElementById('editorParent');
 
 //whiteboard js start
 const whiteboardCont = document.querySelector('.whiteboard-cont');
@@ -43,6 +52,7 @@ const chatInputEmoji = {
 
 
 let boardVisisble = false;
+let editorVisible = false;
 
 whiteboardCont.style.visibility = 'hidden';
 
@@ -81,7 +91,7 @@ socket.on('getCanvas', url => {
         ctx.drawImage(img, 0, 0);
     }
 
-    console.log('got canvas', url)
+
 })
 
 function setColor(newcolor) {
@@ -167,6 +177,149 @@ socket.on('draw', (newX, newY, prevX, prevY, color, size) => {
 })
 
 //whiteboard js end
+
+//initialize quill editor
+function loadQuill(){
+    Quill.register('modules/cursors', QuillCursors)       //cursors for different users when editing
+    const toolbarOptions = [
+        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+        ['blockquote', 'code-block'],
+        [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+        [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+        [{ 'direction': 'rtl' }],                         // text direction
+        // array for drop-downs, empty array = defaults
+        [{ 'size': [] }],
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+        [{ 'font': [] }],
+        [{ 'align': [] }],
+        ['image', 'video'],
+        ['clean'],                                         // remove formatting button
+        ['save']                                          //save button
+      ];
+    
+    editor=new Quill('#editor',{                   //editor setup
+        theme:'snow',
+        modules:{
+            cursors:true,
+            toolbar:toolbarOptions
+        }
+    })
+    const textEditorSaveBtn = document.querySelector('.ql-save');               //configure button to save document data 
+    setUpSaveBtn(textEditorSaveBtn)
+    textEditorSaveBtn.addEventListener('click',(evt)=>btnSaveEvt(evt))
+    
+    const textEditorCloseBtn=document.querySelector('#ql-close')                //configure and style button that closes editor
+    textEditorCloseBtn.innerHTML='<div class="nav-cancel is-active" id="nav-cancel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg></div>'
+    textEditorCloseBtn.addEventListener('click',()=>{textIcon.click()})
+    
+    fitToParent(textEditor.children[0],100,8)           //toolbar takes 8vh of the container
+    fitToParent(textEditor.children[1],100,73)          //main editor takes 67vh of the container
+    textEditor.style.visibility='hidden'                //make editor hidden at the beginning
+    
+}
+
+function setMultipleCursors(){                              //setup new cursor when a user enters the room                               
+    const cursors = editor.getModule("cursors");
+    const id=`${roomid}-${username}`
+    cursors.createCursor(id, username, getCursorColor(0));
+    editor.on("selection-change", function (range, oldRange, source) {      //track cursor location changes
+        if(range){
+            cursors.moveCursor(id, range);                                  //move cursor to new location
+            socket.emit('cursor location',roomid,id,range,oldRange)         //broadcast new location to other users
+            if(editorVisible){                                              //cursor appears if editor is visible
+                cursors.toggleFlag(id, true);
+            }else{
+                cursors.toggleFlag(id, false);
+
+            }
+        }
+     });
+}
+
+
+
+socket.on('update cursors',(cursors)=>{                             //update cursors of other users that use the editor in real time
+    const id=`${roomid}-${username}`
+    const Cursors=editor.getModule("cursors")
+    let colorIndex=1
+    for(let cursor of cursors){
+        if(cursor.id!==id && cursor.hasMoved){
+            const Id=cursor.id
+            const Range=cursor.range
+            Cursors.createCursor(Id,[...Id].slice([...Id].indexOf('-')+1).join(''),getCursorColor(colorIndex++))
+            Cursors.moveCursor(Id,Range); 
+            if(editorVisible){
+                Cursors.toggleFlag(Id, true);
+            }else{
+                Cursors.toggleFlag(Id, false);
+
+            }
+        }
+    }
+    
+})
+
+socket.on('remove user cursor',(oldID)=>{                           //remove cursor of a user that has exited the room
+    const Cursors=editor.getModule("cursors")
+    Cursors.removeCursor(
+        Cursors.cursors().find(cursor=>cursor.id===oldID).id
+    )
+})
+
+
+function hideUserCursors(){                                         //gets called when user closes editor to hide cursors from the screen
+    const Cursors=editor.getModule("cursors")
+    Cursors.cursors().forEach((cursor)=>{
+        Cursors.toggleFlag(cursor.id,false)
+    })
+}
+
+function fitToParent(element,width,height) {            //adjusts quill editors elements dimensions on page
+    element.style.width = `${width}%`;
+    element.style.height = `${height}vh`;
+    element.width = element.offsetWidth;
+    element.height = element.offsetHeight;
+}
+
+
+//create yjs document and connect it with the socket
+function loadDoc(){                 
+    const doc = new Y.Doc()
+    const provider= new SocketIOProvider('https://localhost:3000',roomid,doc,{
+        // disableBc: true,
+        // auth: { token: 'valid-token' },
+      })
+      
+    const type= doc.getText(roomid)
+
+    return {type,provider,doc}
+    
+}
+
+function getCursorColor(index) {                                        
+    
+    return ['blue', 'red', 'orange', 'green','orange','gray','beige','aqua','cyan','magenta'][index];
+  }
+
+  
+    
+
+
+//end quill initialization
+
+//find the id of the video player that matches the user who is currently speaking and put a border in place 
+//or remove it if the user has stopped speaking
+socket.on('detect-speaker',(sid,isSpeaking)=>{
+    if(isSpeaking){
+        document.getElementById(sid[0]).style.border='3px solid #4ecca3'
+    }else{
+        document.getElementById(sid[0]).style.border='none'
+    }
+})
+
 
 let videoAllowed = 1;
 let nodispAllowed = 0;
@@ -287,12 +440,19 @@ continueButt.addEventListener('click', () => {
 
 })
 
-nameField.addEventListener("keyup", function (event) {
-    if (event.keyCode === 13) {
-        event.preventDefault();
+// nameField.addEventListener("keyup", function (event) {                           //event keycodes are deprecated
+//     if (event.keyCode === 13) {
+//         event.preventDefault();
+//         continueButt.click();
+//     }
+// });
+
+window.addEventListener('keyup',(evt)=>{                                
+    if(evt.code==='Enter' && evt.target==nameField){
         continueButt.click();
+
     }
-});
+})
 
 socket.on('user count', count => {
     if (count > 1) {
@@ -344,6 +504,10 @@ function startCall() {
                         videoTrackSent[key] = track;
                 }
             })
+            
+            //initiate hark library (speech detection) for the first user who created the room
+            initiateHark(localStream);
+            
 
         })
         .catch(handleGetUserMediaError);
@@ -622,7 +786,7 @@ socket.on('new icecandidate', handleNewIceCandidate);
 socket.on('video-answer', handleVideoAnswer);
 
 
-socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodispinfo) => {
+socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodispinfo,docInfo) => {
     socket.emit('getCanvas');
     if (cnames)
         cName = cnames;
@@ -641,9 +805,34 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
 		
 	 	
 
+    //if room was just created or new user enters, create or load text editor and provider and set cursors
+    if(docInfo==undefined){
+        const {type,provider,doc}=loadDoc()
+        loadQuill()
+        setMultipleCursors()
+        provider.awareness.setLocalStateField('user',{              //username and color appears on user cursor
+            name:username,
+            color:getCursorColor(0)
+        })
+        const binding= new QuillBinding(type,editor,provider.awareness)
+        docs[roomid]={doc,provider,type,binding}                    //store document info
+        socket.emit('store-doc',{doc,type,provider:provider.awareness,roomid})
+    }else{
+        const {doc,type,provider}=docInfo
+        loadQuill()
+        setMultipleCursors(editor)
+        provider.setLocalStateField('user',{              //username and color appears on user cursor
+            name:username,
+            color:getCursorColor(0)
+        })
+        const binding= new QuillBinding(type,editor,provider)
 
-    console.log(cName);
-	
+    }
+    
+
+    
+    
+
 	
     if (conc) {
         await conc.forEach(sid => {
@@ -770,6 +959,9 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
                 myvideo.srcObject = localStream;
                 myvideo.muted = true;
                 mystream = localStream;
+                
+                //initiate hark library (speech detection) for every other user that enters the room
+                initiateHark(localStream);
             })
             .catch(handleGetUserMediaError);
     }
@@ -812,17 +1004,25 @@ socket.on('remove peer', sid => {
 })
 
 sendButton.addEventListener('click', () => {
-    const msg = messageField.value;
-    messageField.value = '';
-    socket.emit('message', msg, username, roomid);
+    const msg = messageField.value.trim();                              //if message is not empty string
+    if(msg!==""){
+        messageField.value = '';
+        socket.emit('message', msg, username, roomid);
+    }
 })
 
-messageField.addEventListener("keyup", function (event) {
-    if (event.keyCode === 13) {
-        event.preventDefault();
+// messageField.addEventListener("keyup", function (event) {                //event keycodes are deprecated
+//     if (event.keyCode === 13) {
+//         event.preventDefault();
+//         sendButton.click();
+//     }
+// });
+
+window.addEventListener('keyup',(evt)=>{                                
+    if(evt.code==='Enter' && evt.target==messageField){
         sendButton.click();
     }
-});
+})
 
 /*
 // chat room emoji picker
@@ -1131,11 +1331,81 @@ whiteboardButt.addEventListener('click', () => {
         boardVisisble = false;
     }
     else {
+        hideUserCursors()
+        textEditor.style.visibility = 'hidden';
         whiteboardCont.style.visibility = 'visible';
         boardVisisble = true;
+        editorVisible = false;
+        docs[roomid].provider.disconnect()
     }
 })
+
+//when user clicks editor button make it hidden or visible
+//also connect or disconnect the document socket provider accordingly
+textIcon.addEventListener('click', () => {
+    if (editorVisible) {
+        hideUserCursors()
+        textEditor.style.visibility = 'hidden';
+        editorVisible = false;
+        docs[roomid].provider.disconnect()
+    }
+    else {
+        whiteboardCont.style.visibility = 'hidden';
+        textEditor.style.visibility = 'visible';
+        editorVisible = true;
+        boardVisisble = false;
+        docs[roomid].provider.connect()
+    }
+})
+
+    //add elements to save button on editor's toolbar
+    function setUpSaveBtn(target){
+        if(target){
+            const anchor=document.createElement('a')
+            anchor.setAttribute('href','#')
+            anchor.setAttribute('id','download')
+            anchor.innerHTML='<i style="font-size:18px;color:black" class="fa">&#xf0c7;</i>'
+            target.appendChild(anchor)
+        }
+
+
+    }
+
+
+                        //save button on text editor to save document data as text file
+    function btnSaveEvt(evt){
+        const filename=`${username}.txt`;                                       //user's username as file name
+        const content=editor.getContents().ops[0].insert;                       //editor content data
+        const myFile=new Blob([content],{type:'text/plain'});
+    
+        window.URL = window.URL || window.webkitURL;
+            const dlBtn = document.getElementById("download");
+            dlBtn.setAttribute("href", window.URL.createObjectURL(myFile));
+            dlBtn.setAttribute("download", filename);
+    
+    }
+
+    
+
+
 
 cutCall.addEventListener('click', () => {
     location.href = '/';
 })
+
+
+//every time a user speaks and stops speaking send a notice to other users
+//and at the same time put or remove a border from his video box
+function initiateHark(localStream){
+    const options={};
+    const speechEvents=hark(localStream,options);
+    speechEvents.on('speaking',()=>{
+        socket.emit('detect-speaker',roomid,true)
+        document.querySelector('.video-box').style.border='3px solid #4ecca3'
+    })
+    speechEvents.on('stopped_speaking',()=>{
+        socket.emit('detect-speaker',roomid,false)
+        document.querySelector('.video-box').style.border='none'
+    })
+}
+
