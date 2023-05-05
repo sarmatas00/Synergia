@@ -1,0 +1,12 @@
+$errors = [];
+$fields = ['name', 'address', 'email', 'howMany', 'favoriteFruit', 'brochure'];
+$optionalFields = ['brochure'];
+$values = [];
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    foreach ($fields as $field) {
+        if (empty($_POST[$field]) && !in_array($field, $optionalFields)) {
+            $errors[] = $field;
+        } else {
+            $values[$field] = $_POST[$field];
+        }
+    }
