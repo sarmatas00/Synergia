@@ -350,6 +350,11 @@ socket.on('updateUserList', function(users) {
         button.setAttribute('id', user.id);
         var label = document.createElement('label');
         label.setAttribute('class', 'new-message');
+
+        //user cannot start a private chat with himself
+        if((new URLSearchParams(window.location.search)).get('name')===user.name){
+            button.disabled=true;
+        }
 		
         list.append(button);
 		list.append(label);
@@ -400,24 +405,33 @@ socket.on('updateUserList', function(users) {
     }
     jQuery('#users').html(ol);
     $('.private-msg-btn').click(private_chat);
+
+
+    /* display a dropdown menu with the number of online users
+    and a list of their names as items. Updates every time a user enters or exits the room.
+    loops through the array of users and adds each user's name as text to the element. */
+    const dropdown = document.querySelector(".dropdown");
+    dropdown.children[0].innerHTML=`Online ${users.length}&#9660;`      //select the dropdown element and update text to show the number of online users
+    const element = document.querySelector(".status");
+    element.innerHTML=""
+    users.forEach((user)=>{
+            element.innerHTML += `<a href='#'>${user.name}</a>`;
+    })
+    
 	
 
 
 });
 
 function hasNetwork(online) {
-  const element = document.querySelector(".status");
+//   const element = document.querySelector(".status");
   // Update the DOM to reflect the current status
   if (online) {
-    element.classList.remove("offline");
-    element.classList.add("online");
-    element.innerText = currentusr + " Online";
-	presenceusr = currentusr + " Online";
-  } else {
-    element.classList.remove("online");
-    element.classList.add("offline");
-    element.innerText = currentusr + " Offline";
-	presenceusr = currentusr + " Offline";
+    // element.innerHTML += `<a href='#'>${currentusr}</a>`;
+	presenceusr = currentusr + " is Online";
+}else{
+      presenceusr = currentusr + " is Offline";
+
   }
 }
 
@@ -431,14 +445,14 @@ window.addEventListener("load", () => {
     hasNetwork(true);
 	socket.emit('userpresence', presenceusr);
 	
-    
+     
   });
 
   window.addEventListener("offline", () => {
     // Set hasNetwork to offline when they change to offline.
     hasNetwork(false);
 	socket.emit('userpresence', presenceusr);
-    
+     
   });
 });
 
@@ -534,7 +548,19 @@ socket.on('useronoff', function(message) {
         createdAt: formattedTime
     });
     */
-    alert(message);
+
+    
+    /* Replaced the alerts for new users with displaying a modal with a message for a new user.
+     It sets the text of the modal to the online status message, sets the display style to "block" to make it visible,
+     and then sets a timeout of 2 seconds to hide the modal. */
+    const modal = document.querySelector('#newUserModal');
+    modal.children[0].children[0].innerText=message;
+    modal.style.display="block";
+    setTimeout(()=>{
+        modal.style.display='none';
+    },2000)
+   
+    
 	
 	
 });
@@ -1205,5 +1231,37 @@ function add_message(message, id) {
 
     }
 }
+
+/*displays a message to other users in the chat room when a user is typing. 
+It listens for the 'input' event on the chat input field and emits
+a 'userTyping' event to the server. When the server receives the 'userTyping' event, it broadcasts
+the event to all other users in the chat room. The client then listens for the 'userTyping' event
+and creates a new div element with a messageas text indicating that the
+user is typing. If multiple users are typing at the same time text changes. 
+Remove the message after 1 sec to ensure it vanishes after user has stopped typing */
+
+const chatInput = document.querySelector('#chatinput');
+const messageBox = document.querySelector('#messages');
+chatInput.addEventListener('input',()=>{
+    socket.emit('userTyping');
+})
+
+socket.on('userTyping',(user)=>{
+    const typingElement = document.createElement('div');
+    typingElement.classList.add('typing');
+    typingElement.style.fontSize='2em';
+    typingElement.style.margin='0 0 0.5em 1em';
+    if((new URLSearchParams(window.location.search)).get('name')!==user.name){
+        if(document.querySelectorAll('.typing').length<1){
+            typingElement.innerHTML=`User ${user.name} is typing...`;
+            messageBox.insertAdjacentElement('afterend',typingElement);
+            setTimeout(()=>{typingElement.remove()},1000);
+        }else if(!document.querySelector('.typing').innerText.includes(user.name)){
+            typingElement.innerHTML=`Multiple users are typing...`;
+            messageBox.insertAdjacentElement('afterend',typingElement);
+            setTimeout(()=>{typingElement.remove()},1000);
+        }
+    }
+})
 
 

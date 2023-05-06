@@ -219,6 +219,14 @@ io.on('connection', (socket) => {
     socket.on('videoCallNotReceived', (userid) =>{
         socket.broadcast.to(userid).emit('videoCallNotReceived');
     })
+
+    //when a user is typing something, emits the info to other users
+    //to display a typing message on screen
+    socket.on('userTyping',()=>{
+        const user = users.getUser(socket.id);
+        io.to(user.room).emit('userTyping',user);
+
+    })
     //end file uploading part
     socket.on('disconnect', () => {
         const user = users.removeUser(socket.id);

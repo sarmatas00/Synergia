@@ -21,7 +21,12 @@
 <audio id="message-received" autoplay></audio>
 <div class="chat__sidebar" id="chat__sidebar" >
     <h3>Team Mates</h3>
-	<h3 class="status">Hello</h3>
+    <div class="dropdown">
+        <button>Online</button>
+        <div class="dropdown-options status">
+        </div>
+    </div>
+
     <div id="users">
 		
 	</div>
@@ -33,6 +38,11 @@
 
 <div class="chat__main">
     <div class="alert alert-success animated slideInDown text-center alert-display alert-hide" id="alert-box"> <span class="alert-text"></span></div>
+    <div id="newUserModal">
+        <div class="content">
+            <p>User x is online!</p>
+        </div>
+    </div>
     <!-- Trigger the modal with a button -->
     <!-- Modal -->
     <div id="myModal" class="modal fade" role="dialog">
@@ -125,7 +135,7 @@
 			<button style="background: #4ecca3;  width: 35px" class="second-btn uk-button uk-button-primary" >😃</button>
             <div class="ci-cont" cols="70">
 				
-			<textarea name="message" id="chatinput" class="two uk-textarea uk-margin" style="width:400px" ></textarea> 
+			<textarea name="message" id="chatinput" class="two uk-textarea uk-margin" style="width:400px" placeholder="Type your message...."></textarea> 
 			<!--<input name="message" type="textarea" placeholder="Message" class="two uk-textarea uk-margin" autofocus autocomplete="off"/> -->
             
 			<button>Send</button>
