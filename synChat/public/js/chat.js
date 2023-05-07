@@ -3,6 +3,7 @@ var currentusr = usrValue ;
 var cnuser=[];
 var cntusr = 0;
 var presenceusr = "";
+var user_list = [];
 
 function scrollToBottom(id) {
     // Selectors
@@ -327,7 +328,7 @@ socket.on('disconnect', function() {
 });
 
 
-socket.on('updateUserList', function(users) {
+socket.on('updateUserList', function(users,groups) {
     var userfound = false;
     var ol = jQuery('<ol></ol>');
     users.forEach(function(user) {
@@ -354,6 +355,8 @@ socket.on('updateUserList', function(users) {
         //user cannot start a private chat with himself
         if((new URLSearchParams(window.location.search)).get('name')===user.name){
             button.disabled=true;
+        }else{
+            user_list.push(user.name);              //store usernames in room to use for groups
         }
 		
         list.append(button);
@@ -393,7 +396,7 @@ socket.on('updateUserList', function(users) {
                 userfound = true;
             }
         }
-		
+                
     });
     if (!userfound && calling) {
         //end the call since user doesn't exist.
@@ -418,7 +421,15 @@ socket.on('updateUserList', function(users) {
             element.innerHTML += `<a href='#'>${user.name}</a>`;
     })
     
-	
+    /* iterating through existing groups and checking if the current user is
+    included. If the user is included, it passes the group as an argument to add the group to
+    the page. */
+	for(const group in groups){
+        document.querySelector('.groupList').innerHTML='';          //empty group list
+        if(groups[group].users.includes(currentusr)){
+            addGroup(groups[group]);
+        }   
+    }
 
 
 });
@@ -1263,5 +1274,101 @@ socket.on('userTyping',(user)=>{
         }
     }
 })
+
+const groupFormContainer= document.querySelector(".newGroupForm");
+const groupForm= document.querySelector(".groupForm");
+
+/*Create group button event. Removes all previous checkbox inputs and
+ creates a new element with a checkbox input and label for each user in the
+room except the one creating the group.
+ Appends it to the people select list. Finally, it
+sets the display to show the form on the page. */
+document.querySelector('#groupBtn').addEventListener('click',(evt)=>{
+    document.querySelectorAll('.form-field-check').forEach((checkbox)=>checkbox.remove())
+    const prevNames=[];
+    for(const user of user_list){
+        if(!prevNames.includes(user)){
+            const newPersonElement = document.createElement('div');
+            newPersonElement.classList.add('form-field-check');
+            newPersonElement.innerHTML=`<input type="checkbox" name="user" value = ${user} />
+            <label for="user">${user}</label>`
+            document.querySelector('.startPeopleList').insertAdjacentElement('afterend',newPersonElement);
+            prevNames.push(user);
+        }        
+    }
+    groupFormContainer.style.display="block";
+})
+
+/* when user selects cancel button on new group form, the form vanished
+*/
+document.querySelector('.cancelGroupMake').addEventListener('click',(evt)=>{
+    evt.preventDefault();
+    groupFormContainer.style.display="none";
+})
+
+/* submit group button event. It gets the value of group name and checks if it is empty. If it is empty,
+ it adds a red border to the input. Otherwise, it creates a FormData object to extracts the values
+of the form fields, adds the current user's name to the list of names, and emits a request with the data of 
+the new group. In the end red border goes away and the form vanishes */
+document.querySelector('.makeGroup').addEventListener('click',(evt)=>{
+    evt.preventDefault();
+    const nameInput = document.getElementById('groupName');
+    if(nameInput.value===""){
+        nameInput.style.border='3px solid red'
+    }else{
+        const formData = new FormData(groupForm);
+        let names = [];
+        let groupName="";
+        for (const [key, value] of formData) {
+            if(key==="name"){
+                groupName = value;
+            }else{
+                if(value){
+                    names.push(value);
+                }
+            }
+        }
+        names.push(currentusr);
+    
+        socket.emit('create group',groupName,names);
+        
+        groupFormContainer.style.display="none";
+        nameInput.style.border='1px solid #e1e1e1';
+    }
+})
+
+//when a new group is created, it is added to the page if the user is included 
+const groups = document.querySelector('.groupList');
+socket.on('add group',(group)=>{
+    if(group.users.includes(currentusr)){
+        addGroup(group);
+    }
+});
+
+/**
+  Adds a new group to a list with a label and a button.
+ The parameter "group" is an object that contains information about a group, including
+  its name, room, and an array of users. The new list elements  specifies number of people
+  in the group and is appended to the group list on the page
+ */
+function addGroup(group){
+    const newGroup = document.createElement('li');
+    groups.append(newGroup);
+
+    const button = document.createElement('button');
+    button.innerHTML = 'Send Message';
+    button.classList.add('btn', 'btn-success');
+    const label = document.createElement('div');
+    label.id=`${group.name}-${group.room}`                          //group id
+
+
+    
+    label.innerHTML = `<label>${group.name} <span>Group</span></label><label>${group.users.length} Users</label>`
+
+    newGroup.appendChild(label);
+    newGroup.appendChild(button);
+};
+
+
 
 

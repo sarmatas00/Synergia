@@ -14,6 +14,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 const users = new Users();
+const groups={};
 
 app.use(express.static(publicPath));
 
@@ -39,7 +40,7 @@ io.on('connection', (socket) => {
         users.removeUser(socket.id);
         users.addUser(socket.id, params.name, params.room);
 
-        io.to(params.room).emit('updateUserList', users.getUserList(params.room));
+        io.to(params.room).emit('updateUserList', users.getUserList(params.room),groups);
         socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
         socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined.`));
         callback();
@@ -227,6 +228,16 @@ io.on('connection', (socket) => {
         io.to(user.room).emit('userTyping',user);
 
     })
+
+    /* Creating a new group. Takes the group name and an array of user names / group members.
+     It then creates a new object with the group name, user names, creator name, and room name.
+    Finally, it emits an 'add group' event to all users in the same room as the creator, passing in
+    the newly created group object */
+    socket.on('create group',(groupName,userNames)=>{
+        groups[groupName]={name:groupName,users:userNames,creator:users.getUser(socket.id).name,room:users.getUser(socket.id).room};
+        io.to(users.getUser(socket.id).room).emit('add group',groups[groupName]);
+    })
+    
     //end file uploading part
     socket.on('disconnect', () => {
         const user = users.removeUser(socket.id);

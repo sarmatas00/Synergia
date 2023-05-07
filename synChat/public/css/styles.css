@@ -387,6 +387,21 @@ ol li{
   color: #f15c4f;
 }
 
+#groupBtn{
+    width: 9em;
+    margin-left: 10%;
+    margin-top: 5px;
+    border: 1px solid #41a700;
+    border-radius:30px;
+    color: #41a700;
+    font-size: 16px;
+    
+}
+
+#groupBtn:hover{
+    background-color: white;
+}
+
 .dropdown {
     display: inline-block;
     position: relative;
@@ -473,5 +488,80 @@ ol li{
     font-size: medium;
 }
   
+
+.newGroupForm{
+     width: 50em;
+    position: absolute;
+    top: 1em;
+    left:1em;
+    z-index: 99;
+    border: 1px solid black;
+    background-color: black;
+    color: #41a700;
+    box-shadow: 0 0 0 99999px rgba(0, 0, 0, .5);
+    display: none;
+}
+
+
+
+.newGroupForm .groupForm{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
+    /* flex-shrink: 1; */
+}
+
+.newGroupForm label{
+    font-size: 1.5em;
+}
+.newGroupForm h3{
+    font-size: 2.5em;
+}
+.newGroupForm .form-field{
+    margin:5px 0;
+}
+.newGroupForm input{
+    width: 190px;
+}
+.newGroupForm h4{
+    font-size: 2em;
+    font-weight: 500;
+}
+.newGroupForm .form-field-check input{
+    width: 30px;
+}
+.newGroupForm button{
+    width: 90px;
+    border-radius: 30px;
+    display: inline;
+    margin-left: 5px;
+    margin-right:5px;
+    background-color:#41a700;
+    font-weight: 600;
+
+}
+
+
+#groups .groupList li{
+    display:flex;
+    flex-direction: column;
+}
+#groups .groupList li label{
+    font-size: 12px;
+}
+#groups .groupList li label:nth-of-type(1){
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+#groups .groupList li label span{
+    color: red;
+    font-size: 12px;
+}
+#groups .groupList li button{
+    width: max-content;
+}
+
   
 
