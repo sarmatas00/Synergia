@@ -485,7 +485,8 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
             vidCont.appendChild(videoOff);
 
             videoContainer.appendChild(vidCont);
-            emojiListener(sid,newvideo);
+            //adding emoji functionality to the room
+            emojiListener();
 			
 			
 			
@@ -729,8 +730,8 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
                     vidCont.appendChild(videoOff);
 
                     videoContainer.appendChild(vidCont);
-                    
-                    emojiListener(sid,newvideo);
+                    //adding emoji functionality to the room
+                    emojiListener();
                     
                     
 		
@@ -815,6 +816,7 @@ socket.on('remove peer', sid => {
     if (document.getElementById(sid)) {
         document.getElementById(sid).remove();
     }
+    //when user is removed his sid is also removed from the tracked sids for emoji func
     let tmp=emojiSID.indexOf(sid);
             if(tmp>-1){
                 emojiSID.splice(tmp,1);
@@ -1165,18 +1167,23 @@ let statusIcons = {
   }
   
 var  intervalID="";
-function emojiListener(sid,video){
+
+//Function for emoji display support
+function emojiListener(){
+    //Checks if emoji button listener has already been created with a html element
     let emoCheck=document.getElementById("emojisOn");
-    console.log(emoCheck);
-    for(sid in connections){
-        console.log("el print",sid);
-    }
+    
+    //If the element hasnt been created before it's created now and the button listener is created
     if(emoCheck==null){
         let listenCheck=document.createElement('div')
         listenCheck.innerHTML="<i id=\"emojisOn\"></i>";
         document.getElementById("room").appendChild(listenCheck);
+    //emoOn signals if the button toggle is on or off
     emoOn=false;
+    //Emoji display button listener
     emojiDisp.addEventListener('click',()=>{
+
+        //When emojis are turned off the faceAPI tracking interval is cleared and the emoji icons get a default value
         if(emoOn){
             console.log("emoji off");
             emoOn=false;
@@ -1198,6 +1205,7 @@ function emojiListener(sid,video){
            
             emojiSID=[];
         }  
+        //Emoji tracking is turned on 
         else{
             emoOn=true;
             console.log("emoON")
@@ -1220,6 +1228,7 @@ function turnOnEmojis(){
     let video="";
     let sids="";
     let ctr=0;
+    //For every connected user we track his video and output the according emoji to his icon
     for(sid in connections){
     console.log("Ctr ",++ctr);
     if(!emojiSID.includes(sid)){
@@ -1308,6 +1317,7 @@ function turnOnEmojis(){
                     
                             
         }
+        //same code for the local user
         
                     const detectionsLoc = 
                     await faceapi.detectAllFaces(
@@ -1373,7 +1383,10 @@ function turnOnEmojis(){
             }		
                 
             console.log("detection \n");   
-        }else{
+        }
+        //code for the case that the interval hasnt yet shut down after emoji display is toggled off
+        else
+        {
             for(sid in connections){
                 document.getElementById(`emo${sid}`).src="neutral.png";
                 console.log("neutralizing");
