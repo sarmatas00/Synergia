@@ -7,21 +7,12 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/style.css">
-	<link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
-	
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
-	
-	
-    <!-- UIkit JS -->
-    <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.4/dist/js/uikit.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.4/dist/js/uikit-icons.min.js"></script>
-	
     <script>
         const params = new URLSearchParams(location.search);
         if (!params.get("room")) location.href = "/";
     </script>
-	
-	<script  src="face-api.min.js"></script>
+    <script defer src="face-api.min.js"></script>
 	
 	
 	
@@ -74,9 +65,9 @@
 				<li>
 					<a href="">Services</a>
 					<ul class="sub">
-						<li><a href="">SynEdit</a></li>
-						<li><a href="">SynChat</a></li>
-                        <li><a href="">SynCoding</a></li>
+						<li><a href="">SynergiaEdit</a></li>
+						<li><a href="">SynergiaChat</a></li>
+                        <li><a href="">SynergiaCoding</a></li>
 					</ul>
 				</li>
 				
@@ -111,7 +102,7 @@
 					    <div id="raiseHand"> <img  id = "imH"  width="50" height="50" src="raisedhand.png" >  </div> 
 					    <div>&nbsp;&nbsp</div>
 					    <div id ="myname"> yourname  </div>
-						<div id="emoface"  ><img  id = "iml"  width="50" height="50" src="img/neutral.png" > </div>
+						<div id="emoface"  ><img  id = "iml"  width="50" height="50" src="neutral.png" > </div>
 						 <!-- <div id="raiseH"><img  id = "imHH"  width="50" height="50" src="raisedhand.png" >  </div> -->
 				  
 					</div>	
@@ -185,6 +176,10 @@
                         <i class="fas fa-hand-paper"></i>
                         <span class="tooltiptext">Raise Hand</span>
                     </div>
+                    <div class="raisehand-icon  tooltip" id="Emoji_Display">
+                        <i class="far fa-grin-beam"></i>
+                        <span class="tooltiptext">Emoji Display</span>
+                    </div>
 					<div class="chat-icon  tooltip" id="chat">
                         <i class="fas fa-comment-alt mr-1"></i>
                         <span class="tooltiptext">Chat</span>
@@ -222,13 +217,8 @@
             </div>
 			
             <div class="chat-input-cont">
-				<button style="background: #4ecca3;  width: 35px" class="second-btn uk-button uk-button-primary" >😃</button>
-                <!-- <div class="ci-cont" id="chat"><input type="text" class="chat-input" placeholder="Type chat here.."></div> -->
-                 <div class="ci-cont" cols="70">
-				<!-- <input type="textarea" class="two uk-textarea uk-margin" placeholder="Type chat here.."> -->
-				<textarea name="" id="chatinput" class="two uk-textarea uk-margin" ></textarea>
-				 </div> 
-                 <div class="ci-send"><button class="chat-send">Send</button></div>
+                <div class="ci-cont"><input type="text" class="chat-input" placeholder="Type chat here.."></div>
+                <div class="ci-send"><button class="chat-send">Send</button></div>
             </div>
 			
         </div> 
@@ -250,23 +240,85 @@
            
 			
         </div> 
-		 <script src="vanillaEmojiPicker.js"></script>
-		<script>
-
-			new EmojiPicker({
-				trigger: [
-					
-					{
-						selector: '.second-btn',
-						insertInto: '.two'
-					}
-				],
-				closeButton: true,
-            //specialButtons: green
-			});
-
-		</script>
 		
+		  <!-- Start chat room 
+        https://codepen.io/sajadhsm/pen/odaBdd
+        https://getemoji.com
+       
+
+        <section id="msgerDraggable" class="msger-draggable fadein">
+            <section id="msger" class="msger">
+                <header id="msgerHeader" class="msger-header">
+                    <div class="msger-header-title"><button id="msgerClose" class="fas fa-times"></button></div>
+                    <div class="msger-header-options">
+                        <button id="msgerTheme" class="fas fa-ghost"></button>
+                        <button id="msgerSaveBtn" class="fas fa-save"></button>
+                        <button id="msgerClean" class="fas fa-trash"></button>
+                    </div>
+                </header>
+
+                <main id="msgerChat" class="msger-chat"></main>
+                -->
+                <!-- Start emoji picker 
+
+                <section id="msgerEmojiPicker" class="hidden fadein"></section>
+                 -->
+                <!-- End emoji picker 
+
+                <div class="msger-inputarea">
+                    <textarea
+                        rows="1"
+                        cols="1"
+                        id="msgerInput"
+                        class="msger-input"
+                        placeholder="💬 Write a message..."
+                    ></textarea>
+                </div>
+
+                <div class="msger-input-buttons">
+                    <button id="msgerEmojiBtn" class="fas fa-smile"></button>
+                    <button id="msgerMarkdownBtn" class="fab fa-markdown"></button>
+                    <button id="msgerShareFileBtn" class="fas fa-paperclip"></button>
+                    <button id="msgerVideoUrlBtn" class="fab fa-youtube"></button>
+                    <button id="msgerCPBtn" class="fas fa-users"></button>
+                    <button id="msgerCleanTextBtn" class="fas fa-trash"></button>
+                    <button id="msgerPasteBtn" class="fas fa-paste"></button>
+                    <button id="msgerSendBtn" class="fas fa-paper-plane"></button>
+                </div>
+            </section>
+			 -->
+
+            <!-- Start private msg 
+
+            <section id="msgerCP" class="center fadein">
+                <section id="msgerCPSec" class="msger">
+                    <header id="msgerCPHeader" class="msger-private-header">
+                        <div class="msger-header-title"><i class="fas fa-comment-alt"></i> Send Private messages</div>
+                        <div class="msger-header-options">
+                            <button id="msgerCPCloseBtn" class="fas fa-times"></button>
+                        </div>
+                    </header>
+                    <main id="msgerCPChat" class="msger-chat">
+                        <div class="search-container">
+                            <input
+                                id="searchPeerBarName"
+                                type="text"
+                                placeholder=" 🔍 Search peer by name..."
+                                name="search"
+                                onkeyup="searchPeer()"
+                            />
+                        </div>
+                        <br />
+                        <div id="msgerCPList"></div>
+                    </main>
+                </section>
+            </section>
+			 -->
+
+            <!-- End private msg -->
+       <!-- </section> -->
+
+        <!-- End chat room -->
 
     </div>
 	

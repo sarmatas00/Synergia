@@ -850,27 +850,27 @@ navbar .logo {
   box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.15);
 }
 .container-room .right-cont .chat-input-cont .ci-cont {
-  width: 90%;
+  width: 80%;
 }
 .container-room .right-cont .chat-input-cont .ci-send {
   width: 20%;
   margin-left: 20px;
 }
-.container-room .right-cont .chat-input-cont .two.uk-textarea.uk-margin {
+.container-room .right-cont .chat-input-cont .chat-input {
   width: 100%;
   height: 36px;
   font-size: 0.85rem;
-  padding: 2px 5px;
+  padding: 4px 10px;
   border: none;
   border-bottom: 3px solid #4ecca3;
   color: #393e46;
 }
-.container-room .right-cont .chat-input-cont .two.uk-textarea.uk-margin:focus {
+.container-room .right-cont .chat-input-cont .chat-input:focus {
   outline: none;
 }
 .container-room .right-cont .chat-input-cont .chat-send {
   height: 36px;
-  padding: 5px 2px;
+  padding: 5px 20px;
   border: none;
   background-color: white;
   color: #4ecca3;
@@ -1170,10 +1170,9 @@ ul.sub li a:hover {
 
 /* sub display*/
 ul.primary li:hover ul {
-  display: grid ;
+  display: block;
   background: #fff;
   width: 150px;
-  text-align: center;
 }
 
 /* keeps the tab background white */
@@ -1195,12 +1194,10 @@ ul.primary li:hover > a{
   .wrap {
     width: 100%;
     margin-top: 0px;
-	
   }
   
    li {
     float: none;
-	
   }
   
   ul.primary li:hover a {

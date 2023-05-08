@@ -3,12 +3,10 @@ const myvideo = document.querySelector("#vd1");
 const roomid = params.get("room");
 let username;
 let sd = 1;
+let emoOn=false;
 const chatRoom = document.querySelector('.chat-cont');
 const sendButton = document.querySelector('.chat-send');
-//const messageField = document.querySelector('.chat-input');
-//const messageField = document.querySelector('.two uk-textarea uk-margin');
-const messageField = document.getElementById('chatinput');
-
+const messageField = document.querySelector('.chat-input');
 const videoContainer = document.querySelector('#vcont');
 const overlayContainer = document.querySelector('#overlay')
 const continueButt = document.querySelector('.continue-name');
@@ -20,6 +18,7 @@ const screenShareButt = document.querySelector('.screenshare');
 const whiteboardButt = document.querySelector('.board-icon');
 const inviteButt = document.getElementById('invite');
 const raiseButt = document.getElementById('Raise_Hand');
+const emojiDisp = document.getElementById('Emoji_Display');
 const chatButt = document.getElementById('chat');
 const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
@@ -30,26 +29,22 @@ const whiteboardCont = document.querySelector('.whiteboard-cont');
 const canvas = document.querySelector("#whiteboard");
 const ctx = canvas.getContext('2d');
 
-var iml = document.getElementById("iml");
 
-
-
+const chatInputEmoji = {
+    '<3': '\u2764\uFE0F',
+    '</3': '\uD83D\uDC94',
+    ':D': '\uD83D\uDE00',
+    ':)': '\uD83D\uDE03',
+    ';)': '\uD83D\uDE09',
+    ':(': '\uD83D\uDE12',
+    ':p': '\uD83D\uDE1B',
+    ';p': '\uD83D\uDE1C',
+    ":'(": '\uD83D\uDE22',
+    ':+1:': '\uD83D\uDC4D',
+}; // https://github.com/wooorm/gemoji/blob/main/support.md
 
 
 let boardVisisble = false;
-
-let statusIcons = {
- 
- 
-  neutral: '2',
-  happy: '3',
-  sad: '4',
-  angry: '5',
-  fearful: '6',
-  disgusted: '7',
-  surprised: '8'
-}
-
 
 whiteboardCont.style.visibility = 'hidden';
 
@@ -335,17 +330,8 @@ function reportError(e) {
 }
 
 
-
-
-
 function startCall() {
 
-
-	faceapi.loadTinyFaceDetectorModel('/weights');
-	faceapi.loadFaceLandmarkModel('/weights');
-    faceapi.loadFaceRecognitionModel('/weights');
-	faceapi.loadFaceExpressionModel('/weights');
-	
     navigator.mediaDevices.getUserMedia(mediaConstraints)
         .then(localStream => {
             myvideo.srcObject = localStream;
@@ -366,86 +352,6 @@ function startCall() {
 
 
 }
-
-myvideo.addEventListener('play', () => 
-{
-	
-	
-	//alert("play" );
-	
-	setInterval(async () => 
-	{
-				
-				const detections = 
-				await faceapi.detectAllFaces(
-				myvideo, 
-				new faceapi.TinyFaceDetectorOptions()
-				)
-
-				.withFaceExpressions();
-	
-				
-				  
-				if (detections.length > 0) 
-				{
-      
-					detections.forEach(element => 
-					{
-       
-						let status = "";
-						let valueStatus = 0.0;
-						for (const [key, value] of Object.entries(element.expressions)) {
-							if (value > valueStatus) 
-							{
-								status = key
-								valueStatus = value;
-							}
-						}
-					
-        
-						
-						let source = "";
-						switch (statusIcons[status]) 
-						{
-							case '2': source="img/neutral.png";
-							break;
-							case '3': source="img/smile.png";
-							break;
-							case '4': source="img/sad.png";
-							break;
-							case '5': source="img/angry.png";
-							break;
-							case '6': source="img/scared.png";
-							break;
-							case '7': source="img/disgust.png";
-							break;
-							case '8': source="img/surprised.png";
-							break;
-							default: source="img/default.png";
-						}
-			//alert("joined "+ status + " " + source);
-						
-			//faceR.innerHTML = statusIcons[status];
-			
-						iml.src = source;		
-			
-				});
-		} else {
-			console.log("No Faces")
-			//face.innerHTML = statusIcons.default;
-			source="img/default.png";
-			
-		}		
-		
-			
-	
-					
-				
-                		
-		   
-		}, 1000);	
-		
-	})	
 
 raiseButt.addEventListener('click', () => {
 	
@@ -531,7 +437,7 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
             name.innerHTML = `${cName[sid]}`;
 			teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> `+ '<br>';
 			//emo.classList.add('nametag');
-            emo.innerHTML = " <img src=\"neutral.png\" width=\"50px\" height=\"50px\">";
+            emo.innerHTML = ` <img id=\"emo${sid}\" src=\"neutral.png\" width=\"50px\" height=\"50px\">`;
 			raiseh.innerHTML = " <img src=\"raisedhand.png\" width=\"50px\" height=\"50px\">";
             vidCont.id = sid;
             muteIcon.id = `mute${sid}`;
@@ -579,6 +485,7 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
             vidCont.appendChild(videoOff);
 
             videoContainer.appendChild(vidCont);
+            emojiListener(sid,newvideo);
 			
 			
 			
@@ -773,7 +680,7 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
 					teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> ` + '<br>';
 					
 					//emo.classList.add('nametag');
-					emo.innerHTML = " <img src=\"neutral.png\" width=\"50px\" height=\"50px\">";
+					emo.innerHTML = ` <img id="emo${sid}" src=\"neutral.png\" width=\"50px\" height=\"50px\">`;
 					raiseh.innerHTML = " <img src=\"raisedhand.png\" width=\"50px\" height=\"50px\">";
                     vidCont.id = sid;
                     muteIcon.id = `mute${sid}`;
@@ -822,6 +729,11 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
                     vidCont.appendChild(videoOff);
 
                     videoContainer.appendChild(vidCont);
+                    
+                    emojiListener(sid,newvideo);
+                    
+                    
+		
 					
 					
 					
@@ -903,6 +815,10 @@ socket.on('remove peer', sid => {
     if (document.getElementById(sid)) {
         document.getElementById(sid).remove();
     }
+    let tmp=emojiSID.indexOf(sid);
+            if(tmp>-1){
+                emojiSID.splice(tmp,1);
+            }
 
     delete connections[sid];
 })
@@ -920,17 +836,153 @@ messageField.addEventListener("keyup", function (event) {
     }
 });
 
+/*
+// chat room emoji picker
+let msgerEmojiPicker;
 
+
+/**
+ * Chat room buttons click event
+ 
+function setChatRoomBtn() {
+    // adapt chat room size for mobile
+    setChatRoomAndCaptionForMobile();
+
+    // open hide chat room
+    chatRoomBtn.addEventListener('click', (e) => {
+        if (!isChatRoomVisible) {
+            showChatRoomDraggable();
+        } else {
+            hideChatRoomAndEmojiPicker();
+            e.target.className = 'fas fa-comment';
+        }
+    });
+
+    
+
+    // show msger participants section
+    msgerCPBtn.addEventListener('click', (e) => {
+        if (!thereIsPeerConnections()) {
+            return userLog('info', 'No participants detected');
+        }
+        msgerCP.style.display = 'flex';
+    });
+
+    // hide msger participants section
+    msgerCPCloseBtn.addEventListener('click', (e) => {
+        msgerCP.style.display = 'none';
+    });
+
+    // clean chat messages
+    msgerClean.addEventListener('click', (e) => {
+        if (chatMessages.length != 0) {
+            return cleanMessages();
+        }
+        userLog('info', 'No chat messages to delete');
+    });
+
+    // save chat messages to file
+    msgerSaveBtn.addEventListener('click', (e) => {
+        if (chatMessages.length != 0) {
+            return downloadChatMsgs();
+        }
+        userLog('info', 'No chat messages to save');
+    });
+
+    
+
+    // Markdown on-off
+    msgerMarkdownBtn.addEventListener('click', (e) => {
+        isChatMarkdownOn = !isChatMarkdownOn;
+        setColor(msgerMarkdownBtn, isChatMarkdownOn ? 'lime' : 'white');
+    });
+
+    
+
+    
+    
+
+    // on input check 4emoji from map
+    msgerInput.oninput = function () {
+        for (let i in chatInputEmoji) {
+            let regex = new RegExp(escapeSpecialChars(i), 'gim');
+            this.value = this.value.replace(regex, chatInputEmoji[i]);
+        }
+        checkLineBreaks();
+    };
+
+    msgerInput.onpaste = () => {
+        isChatPasteTxt = true;
+        checkLineBreaks();
+    };
+
+    // clean input msg txt
+    msgerCleanTextBtn.addEventListener('click', (e) => {
+        cleanMessageInput();
+    });
+
+    // paste to input msg txt
+    msgerPasteBtn.addEventListener('click', (e) => {
+        pasteToMessageInput();
+    });
+
+   
+
+    
+}
+
+/**
+ * Emoji picker chat room button click event
+ 
+function setChatEmojiBtn() {
+    msgerEmojiBtn.addEventListener('click', (e) => {
+        // prevent refresh page
+        e.preventDefault();
+        hideShowEmojiPicker();
+    });
+    // Add emoji picker
+    const pickerOptions = {
+        theme: 'dark',
+        onEmojiSelect: addEmojiToMsg,
+    };
+    const emojiPicker = new EmojiMart.Picker(pickerOptions);
+    msgerEmojiPicker.appendChild(emojiPicker);
+}
+
+/**
+ * Add emoji to chat message
+ 
+function addEmojiToMsg(data) {
+    //console.log(data);
+    msgerInput.value += data.native;
+    hideShowEmojiPicker();
+}
+
+/**
+ * Show msger draggable on center screen position
+ 
+function showChatRoomDraggable() {
+    playSound('newMessage');
+    if (isMobileDevice) {
+        buttonsBar.style.display = 'none';
+        isButtonsVisible = false;
+    }
+    chatRoomBtn.className = 'fas fa-comment-slash';
+    msgerDraggable.style.top = '50%';
+    msgerDraggable.style.left = isMobileDevice ? '50%' : '25%';
+    msgerDraggable.style.display = 'flex';
+    isChatRoomVisible = true;
+    setTippy(chatRoomBtn, 'Close the chat', 'right-start');
+}
+*/
 
 socket.on('message', (msg, sendername, time) => {
     chatRoom.scrollTop = chatRoom.scrollHeight;
-	//msg=emoji.emojify(msg, null, format);
     chatRoom.innerHTML += `<div class="message">
     <div class="info">
         <div class="username">${sendername}</div>
         <div class="time">${time}</div>
     </div>
-	
     <div class="content">
         ${msg}
     </div>
@@ -1099,3 +1151,344 @@ whiteboardButt.addEventListener('click', () => {
 cutCall.addEventListener('click', () => {
     location.href = '/';
 })
+
+let statusIcons = {
+ 
+ 
+    neutral: '2',
+    happy: '3',
+    sad: '4',
+    angry: '5',
+    fearful: '6',
+    disgusted: '7',
+    surprised: '8'
+  }
+  
+var  intervalID="";
+function emojiListener(sid,video){
+    let emoCheck=document.getElementById("emojisOn");
+    console.log(emoCheck);
+    for(sid in connections){
+        console.log("el print",sid);
+    }
+    if(emoCheck==null){
+        let listenCheck=document.createElement('div')
+        listenCheck.innerHTML="<i id=\"emojisOn\"></i>";
+        document.getElementById("room").appendChild(listenCheck);
+    emoOn=false;
+    emojiDisp.addEventListener('click',()=>{
+        if(emoOn){
+            console.log("emoji off");
+            emoOn=false;
+            
+            clearInterval(intervalID);
+            intervalID=null;
+
+            setTimeout(()=>{
+                for(sid in connections){
+                    document.getElementById(`emo${sid}`).src="neutral.png";
+                    console.log("neutralizing");
+                }
+                document.getElementById(`iml`).src="neutral.png";
+                console.log("neutralized local");
+
+            },1000)
+            
+        
+           
+            emojiSID=[];
+        }  
+        else{
+            emoOn=true;
+            console.log("emoON")
+            turnOnEmojis();
+
+            
+        } 
+    })
+    
+}
+}
+emojiSID=[];
+
+
+  
+
+
+function turnOnEmojis(){
+
+    let video="";
+    let sids="";
+    let ctr=0;
+    for(sid in connections){
+    console.log("Ctr ",++ctr);
+    if(!emojiSID.includes(sid)){
+    emojiSID.push(sid);
+    video=document.getElementById(`video${sid}`);
+    
+    console.log("sid",sid,"  video",video);
+    if(!intervalID){
+        intervalID=setInterval(async () => 
+        {
+        if(emoOn){
+            
+        for(sid in connections){
+            video=document.getElementById(`video${sid}`);
+            emoRem=document.getElementById(`emo${sid}`);
+
+            faceapi.loadTinyFaceDetectorModel('weights');
+        faceapi.loadFaceLandmarkModel('weights');
+        faceapi.loadFaceRecognitionModel('weights');
+        faceapi.loadFaceExpressionModel('weights');
+                    const detections = 
+                    await faceapi.detectAllFaces(
+                    video, 
+                    new faceapi.TinyFaceDetectorOptions()
+                    )
+    
+                    .withFaceExpressions();
+        
+                    
+                      
+                    if (detections.length > 0) 
+                    {
+          
+                        detections.forEach(element => 
+                        {
+           
+                            let status = "";
+                            let valueStatus = 0.0;
+                            for (const [key, value] of Object.entries(element.expressions)) {
+                                if (value > valueStatus) 
+                                {
+                                    status = key
+                                    valueStatus = value;
+                                }
+                            }
+                        
+            
+                    
+                            let source = "";
+                            switch (statusIcons[status]) 
+                            {
+                                case '2': source="img/neutral.png";
+                                break;
+                                case '3': source="img/smile.png";
+                                break;
+                                case '4': source="img/sad.png";
+                                break;
+                                case '5': source="img/angry.png";
+                                break;
+                                case '6': source="img/scared.png";
+                                break;
+                                case '7': source="img/disgust.png";
+                                break;
+                                case '8': source="img/surprised.png";
+                                break;
+                                default: source="img/default.png";
+                            }
+                //alert("joined "+ status + " " + source);
+                //let emo=document.getElementById("iml");
+                //let emoLoc=document.getElementById("iml");
+                //emoLoc.src=source;
+                emoRem.src=source;
+                //faceR.innerHTML = statusIcons[status];
+                
+                
+                
+                    });
+            } else {
+                console.log("No Faces")
+                //face.innerHTML = statusIcons.default;
+            }		
+                
+                    
+        
+                        
+                    
+                            
+        }
+        
+                    const detectionsLoc = 
+                    await faceapi.detectAllFaces(
+                    myvideo, 
+                    new faceapi.TinyFaceDetectorOptions()
+                    )
+    
+                    .withFaceExpressions();
+        
+                    
+                      
+                    if (detectionsLoc.length > 0) 
+                    {
+          
+                        detectionsLoc.forEach(element => 
+                        {
+           
+                            let status = "";
+                            let valueStatus = 0.0;
+                            for (const [key, value] of Object.entries(element.expressions)) {
+                                if (value > valueStatus) 
+                                {
+                                    status = key
+                                    valueStatus = value;
+                                }
+                            }
+                        
+            
+                    
+                            let source = "";
+                            switch (statusIcons[status]) 
+                            {
+                                case '2': source="img/neutral.png";
+                                break;
+                                case '3': source="img/smile.png";
+                                break;
+                                case '4': source="img/sad.png";
+                                break;
+                                case '5': source="img/angry.png";
+                                break;
+                                case '6': source="img/scared.png";
+                                break;
+                                case '7': source="img/disgust.png";
+                                break;
+                                case '8': source="img/surprised.png";
+                                break;
+                                default: source="img/default.png";
+                            }
+                //alert("joined "+ status + " " + source);
+                //let emo=document.getElementById("iml");
+                //let emoLoc=document.getElementById("iml");
+                //emoLoc.src=source;
+                let emoLoc=document.getElementById("iml");
+                emoLoc.src=source;
+                //faceR.innerHTML = statusIcons[status];
+                
+                
+                
+                    });
+            } else {
+                console.log("No Faces")
+                //face.innerHTML = statusIcons.default;
+            }		
+                
+            console.log("detection \n");   
+        }else{
+            for(sid in connections){
+                document.getElementById(`emo${sid}`).src="neutral.png";
+                console.log("neutralizing");
+            }
+            document.getElementById(`iml`).src="neutral.png";
+            console.log("neutralized local");
+        } 
+            }, 150);
+        }
+        
+        }
+    	
+    }
+
+    console.log("length ",emojiSID.length);
+        
+}
+
+
+
+/*
+function startVideo() {
+	
+    faceapi.loadTinyFaceDetectorModel('weights');
+	faceapi.loadFaceLandmarkModel('weights');
+    faceapi.loadFaceRecognitionModel('weights');
+	faceapi.loadFaceExpressionModel('weights');
+	
+	navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+    .then(stream => {
+        // attach this stream to window object so you can reuse it later
+       
+        video.srcObject = stream;
+    })
+    .catch((err) =>{
+        console.log(err);
+    });
+	
+  
+} 
+
+video.addEventListener('play', () => 
+{
+	
+	
+	//alert("play" );
+	
+	setInterval(async () => 
+	{
+    
+				const detections = 
+				await faceapi.detectAllFaces(
+				video, 
+				new faceapi.TinyFaceDetectorOptions()
+				)
+
+				.withFaceExpressions();
+	
+				
+				  
+				if (detections.length > 0) 
+				{
+      
+					detections.forEach(element => 
+					{
+       
+						let status = "";
+						let valueStatus = 0.0;
+						for (const [key, value] of Object.entries(element.expressions)) {
+							if (value > valueStatus) 
+							{
+								status = key
+								valueStatus = value;
+							}
+						}
+					
+        
+						alert("created" + status);	
+						let source = "";
+						switch (statusIcons[status]) 
+						{
+							case '2': source="img/neutral.png";
+							break;
+							case '3': source="img/smile.png";
+							break;
+							case '4': source="img/sad.png";
+							break;
+							case '5': source="img/angry.png";
+							break;
+							case '6': source="img/scared.png";
+							break;
+							case '7': source="img/disgust.png";
+							break;
+							case '8': source="img/surprised.png";
+							break;
+							default: source="img/default.png";
+						}
+			//alert("joined "+ status + " " + source);
+						iml.src = source;
+			//faceR.innerHTML = statusIcons[status];
+			
+			
+			
+				});
+		} else {
+			console.log("No Faces")
+			//face.innerHTML = statusIcons.default;
+		}		
+			
+				
+	
+					
+				
+                		
+		   
+		}, 100);	
+		
+	})	*/
