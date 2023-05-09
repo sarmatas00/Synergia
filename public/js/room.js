@@ -8,8 +8,12 @@ const myvideo = document.querySelector("#vd1");
 const roomid = params.get("room");
 let username;
 let sd = 1;
+
+let emoOn=false;
+
 let docs={};    
 let editor={}                                     
+
 const chatRoom = document.querySelector('.chat-cont');
 const sendButton = document.querySelector('.chat-send');
 const messageField = document.getElementById('chatinput');
@@ -25,6 +29,7 @@ const whiteboardButt = document.querySelector('.board-icon');
 const textIcon = document.querySelector('.text-icon');
 const inviteButt = document.getElementById('invite');
 const raiseButt = document.getElementById('Raise_Hand');
+const emojiDisp = document.getElementById('Emoji_Display');
 const chatButt = document.getElementById('chat');
 const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
@@ -599,7 +604,7 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
             name.innerHTML = `${cName[sid]}`;
 			teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> `+ '<br>';
 			//emo.classList.add('nametag');
-            emo.innerHTML = " <img src=\"neutral.png\" width=\"50px\" height=\"50px\">";
+            emo.innerHTML = ` <img id=\"emo${sid}\" src=\"neutral.png\" width=\"50px\" height=\"50px\">`;
 			raiseh.innerHTML = " <img src=\"raisedhand.png\" width=\"50px\" height=\"50px\">";
             vidCont.id = sid;
             muteIcon.id = `mute${sid}`;
@@ -647,6 +652,8 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
             vidCont.appendChild(videoOff);
 
             videoContainer.appendChild(vidCont);
+            //adding emoji functionality to the room
+            emojiListener();
 			
 			
 			
@@ -866,7 +873,7 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
 					teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> ` + '<br>';
 					
 					//emo.classList.add('nametag');
-					emo.innerHTML = " <img src=\"neutral.png\" width=\"50px\" height=\"50px\">";
+					emo.innerHTML = ` <img id="emo${sid}" src=\"neutral.png\" width=\"50px\" height=\"50px\">`;
 					raiseh.innerHTML = " <img src=\"raisedhand.png\" width=\"50px\" height=\"50px\">";
                     vidCont.id = sid;
                     muteIcon.id = `mute${sid}`;
@@ -915,6 +922,11 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
                     vidCont.appendChild(videoOff);
 
                     videoContainer.appendChild(vidCont);
+                    //adding emoji functionality to the room
+                    emojiListener();
+                    
+                    
+		
 					
 					
 					
@@ -999,6 +1011,11 @@ socket.on('remove peer', sid => {
     if (document.getElementById(sid)) {
         document.getElementById(sid).remove();
     }
+    //when user is removed his sid is also removed from the tracked sids for emoji func
+    let tmp=emojiSID.indexOf(sid);
+            if(tmp>-1){
+                emojiSID.splice(tmp,1);
+            }
 
     delete connections[sid];
 })
@@ -1394,6 +1411,259 @@ cutCall.addEventListener('click', () => {
 })
 
 
+let statusIcons = {
+ 
+ 
+    neutral: '2',
+    happy: '3',
+    sad: '4',
+    angry: '5',
+    fearful: '6',
+    disgusted: '7',
+    surprised: '8'
+  }
+  
+var  intervalID="";
+
+//Function for emoji display support
+function emojiListener(){
+    //Checks if emoji button listener has already been created with a html element
+    let emoCheck=document.getElementById("emojisOn");
+    
+    //If the element hasnt been created before it's created now and the button listener is created
+    if(emoCheck==null){
+        let listenCheck=document.createElement('div')
+        listenCheck.innerHTML="<i id=\"emojisOn\"></i>";
+        document.getElementById("room").appendChild(listenCheck);
+    //emoOn signals if the button toggle is on or off
+    emoOn=false;
+    //Emoji display button listener
+    emojiDisp.addEventListener('click',()=>{
+
+        //When emojis are turned off the faceAPI tracking interval is cleared and the emoji icons get a default value
+        if(emoOn){
+            console.log("emoji off");
+            emoOn=false;
+            
+            clearInterval(intervalID);
+            intervalID=null;
+
+            setTimeout(()=>{
+                for(sid in connections){
+                    document.getElementById(`emo${sid}`).src="neutral.png";
+                    console.log("neutralizing");
+                }
+                document.getElementById(`iml`).src="neutral.png";
+                console.log("neutralized local");
+
+            },1000)
+            
+        
+           
+            emojiSID=[];
+        }  
+        //Emoji tracking is turned on 
+        else{
+            emoOn=true;
+            console.log("emoON")
+            turnOnEmojis();
+
+            
+        } 
+    })
+    
+}
+}
+emojiSID=[];
+
+
+  
+
+
+function turnOnEmojis(){
+
+    let video="";
+    let sids="";
+    let ctr=0;
+    //For every connected user we track his video and output the according emoji to his icon
+    for(sid in connections){
+    console.log("Ctr ",++ctr);
+    if(!emojiSID.includes(sid)){
+    emojiSID.push(sid);
+    video=document.getElementById(`video${sid}`);
+    
+    console.log("sid",sid,"  video",video);
+    if(!intervalID){
+        intervalID=setInterval(async () => 
+        {
+        if(emoOn){
+            
+        for(sid in connections){
+            video=document.getElementById(`video${sid}`);
+            emoRem=document.getElementById(`emo${sid}`);
+
+            faceapi.loadTinyFaceDetectorModel('weights');
+        faceapi.loadFaceLandmarkModel('weights');
+        faceapi.loadFaceRecognitionModel('weights');
+        faceapi.loadFaceExpressionModel('weights');
+                    const detections = 
+                    await faceapi.detectAllFaces(
+                    video, 
+                    new faceapi.TinyFaceDetectorOptions()
+                    )
+    
+                    .withFaceExpressions();
+        
+                    
+                      
+                    if (detections.length > 0) 
+                    {
+          
+                        detections.forEach(element => 
+                        {
+           
+                            let status = "";
+                            let valueStatus = 0.0;
+                            for (const [key, value] of Object.entries(element.expressions)) {
+                                if (value > valueStatus) 
+                                {
+                                    status = key
+                                    valueStatus = value;
+                                }
+                            }
+                        
+            
+                    
+                            let source = "";
+                            switch (statusIcons[status]) 
+                            {
+                                case '2': source="img/neutral.png";
+                                break;
+                                case '3': source="img/smile.png";
+                                break;
+                                case '4': source="img/sad.png";
+                                break;
+                                case '5': source="img/angry.png";
+                                break;
+                                case '6': source="img/scared.png";
+                                break;
+                                case '7': source="img/disgust.png";
+                                break;
+                                case '8': source="img/surprised.png";
+                                break;
+                                default: source="img/default.png";
+                            }
+                //alert("joined "+ status + " " + source);
+                //let emo=document.getElementById("iml");
+                //let emoLoc=document.getElementById("iml");
+                //emoLoc.src=source;
+                emoRem.src=source;
+                //faceR.innerHTML = statusIcons[status];
+                
+                
+                
+                    });
+            } else {
+                console.log("No Faces")
+                //face.innerHTML = statusIcons.default;
+            }		
+                
+                    
+        
+                        
+                    
+                            
+        }
+        //same code for the local user
+        
+                    const detectionsLoc = 
+                    await faceapi.detectAllFaces(
+                    myvideo, 
+                    new faceapi.TinyFaceDetectorOptions()
+                    )
+    
+                    .withFaceExpressions();
+        
+                    
+                      
+                    if (detectionsLoc.length > 0) 
+                    {
+          
+                        detectionsLoc.forEach(element => 
+                        {
+           
+                            let status = "";
+                            let valueStatus = 0.0;
+                            for (const [key, value] of Object.entries(element.expressions)) {
+                                if (value > valueStatus) 
+                                {
+                                    status = key
+                                    valueStatus = value;
+                                }
+                            }
+                        
+            
+                    
+                            let source = "";
+                            switch (statusIcons[status]) 
+                            {
+                                case '2': source="img/neutral.png";
+                                break;
+                                case '3': source="img/smile.png";
+                                break;
+                                case '4': source="img/sad.png";
+                                break;
+                                case '5': source="img/angry.png";
+                                break;
+                                case '6': source="img/scared.png";
+                                break;
+                                case '7': source="img/disgust.png";
+                                break;
+                                case '8': source="img/surprised.png";
+                                break;
+                                default: source="img/default.png";
+                            }
+                //alert("joined "+ status + " " + source);
+                //let emo=document.getElementById("iml");
+                //let emoLoc=document.getElementById("iml");
+                //emoLoc.src=source;
+                let emoLoc=document.getElementById("iml");
+                emoLoc.src=source;
+                //faceR.innerHTML = statusIcons[status];
+                
+                
+                
+                    });
+            } else {
+                console.log("No Faces")
+                //face.innerHTML = statusIcons.default;
+            }		
+                
+            console.log("detection \n");   
+        }
+        //code for the case that the interval hasnt yet shut down after emoji display is toggled off
+        else
+        {
+            for(sid in connections){
+                document.getElementById(`emo${sid}`).src="neutral.png";
+                console.log("neutralizing");
+            }
+            document.getElementById(`iml`).src="neutral.png";
+            console.log("neutralized local");
+        } 
+            }, 150);
+        }
+        
+        }
+    	
+    }
+
+    console.log("length ",emojiSID.length);
+        
+}
+
+
+
 //every time a user speaks and stops speaking send a notice to other users
 //and at the same time put or remove a border from his video box
 function initiateHark(localStream){
@@ -1419,4 +1689,5 @@ syncChat.addEventListener('click',async (evt)=>{
     await fetch('/start-chat-server');
     window.open('http://localhost:3001','_blank');
 })
+
 

@@ -127,6 +127,8 @@ io.on('connect', socket => {
         ));
     })
 
+    
+
     socket.on('getCanvas', () => {
         if (roomBoard[socketroom[socket.id]])
             socket.emit('getCanvas', roomBoard[socketroom[socket.id]]);

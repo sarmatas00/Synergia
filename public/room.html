@@ -15,6 +15,7 @@
         const params = new URLSearchParams(location.search);
         if (!params.get("room")) location.href = "/";
     </script>
+    <script defer src="face-api.min.js"></script>
 	
 	
 	
@@ -187,6 +188,10 @@
 					<div class="raisehand-icon  tooltip" id="Raise_Hand">
                         <i class="fas fa-hand-paper"></i>
                         <span class="tooltiptext">Raise Hand</span>
+                    </div>
+                    <div class="raisehand-icon  tooltip" id="Emoji_Display">
+                        <i class="far fa-grin-beam"></i>
+                        <span class="tooltiptext">Emoji Display</span>
                     </div>
 					<div class="chat-icon  tooltip" id="chat">
                         <i class="fas fa-comment-alt mr-1"></i>
