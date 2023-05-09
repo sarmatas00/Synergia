@@ -436,6 +436,58 @@ navbar .logo {
 .container-room .left-cont .whiteboard-cont .colors-cont .clearboard:hover {
   cursor: pointer;
 }
+
+.container-room .left-cont #editorParent {
+  height: 85vh;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0 50px 50px;
+  min-height: 600px;
+  /* background-color: white; */
+  border-radius: 10px;
+  margin-top: 5vh;
+  
+}
+
+.container-room .left-cont #editorParent #editor{
+  background-color: white;
+}
+
+.container-room .left-cont #editorParent #ql-close{
+  float: right;
+  position: relative;
+  bottom: 90%;
+  right: 2%;
+  border: 1px solid #4ecca3;
+  border-radius: 50%;
+  padding: 10px;
+  text-align: center;
+  background: white;
+
+}
+.container-room .left-cont #editorParent #ql-close:hover{
+  cursor: pointer;
+  background:#4ecca3;
+  transform: scaleZ(5%);
+}
+
+.container-room .left-cont #editorParent .ql-toolbar{
+  background-color: white;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.ql-editor{
+  padding-top: 20px !important;
+}
+
+
+
+
 .container-room .left-cont .video-cont {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -545,7 +597,7 @@ navbar .logo {
   margin: 0 auto;
   display: flex;
   margin-top: 30px;
-  width: 500px;
+  width: 550px;
   background-color: #ffffff;
   border-radius: 10px;
   padding: 10px;
@@ -583,7 +635,7 @@ navbar .logo {
   background-color: #393e46;
 }
 
-.container-room .left-cont .footer .utils .nodisplay {
+.container-room .left-cont .footer .utils .nodisplay,.screenshare,.board-icon,.text-icon,.invite-icon,.raisehand-icon,.chat-icon,.team-icon {
   background-color: #d8d8d8;
   text-align: center;
   margin-left: 10px;
@@ -595,13 +647,13 @@ navbar .logo {
   transition: background-color 0.3s;
   transition: color 0.3s;
 }
-.container-room .left-cont .footer .utils .nodisplay:hover {
+.container-room .left-cont .footer .utils :where(.nodisplay,.screenshare,.board-icon,.text-icon,.invite-icon,.raisehand-icon,.chat-icon,.team-icon):hover {
   cursor: pointer;
   color: white;
   background-color: #393e46;
 }
 
-.container-room .left-cont .footer .utils .screenshare {
+/* .container-room .left-cont .footer .utils .screenshare {
   background-color: #d8d8d8;
   text-align: center;
   margin-left: 10px;
@@ -612,13 +664,13 @@ navbar .logo {
   border-radius: 100px;
   transition: background-color 0.3s;
   transition: color 0.3s;
-}
-.container-room .left-cont .footer .utils .screenshare:hover {
+} */
+/* .container-room .left-cont .footer .utils .screenshare:hover {
   cursor: pointer;
   color: white;
   background-color: #393e46;
-}
-.container-room .left-cont .footer .utils .board-icon {
+} */
+/* .container-room .left-cont .footer .utils .board-icon {
   background-color: #d8d8d8;
   text-align: center;
   color: #393e46;
@@ -629,14 +681,14 @@ navbar .logo {
   border-radius: 100px;
   transition: background-color 0.3s;
   transition: color 0.3s;
-}
-.container-room .left-cont .footer .utils .board-icon:hover {
+} */
+/* .container-room .left-cont .footer .utils .board-icon:hover {
   cursor: pointer;
   color: white;
   background-color: #393e46;
-}
+} */
 
-.container-room .left-cont .footer .utils .invite-icon {
+/* .container-room .left-cont .footer .utils .text-icon {
   background-color: #d8d8d8;
   text-align: center;
   color: #393e46;
@@ -647,8 +699,26 @@ navbar .logo {
   border-radius: 100px;
   transition: background-color 0.3s;
   transition: color 0.3s;
-}
-.container-room .left-cont .footer .utils .invite-icon:hover {
+} */
+/* .container-room .left-cont .footer .utils .text-icon:hover {
+  cursor: pointer;
+  color: white;
+  background-color: #393e46;
+} */
+
+/* .container-room .left-cont .footer .utils .invite-icon {
+  background-color: #d8d8d8;
+  text-align: center;
+  color: #393e46;
+  margin-left: 10px;
+  padding: 10px;
+  height: 40px;
+  width: 40px;
+  border-radius: 100px;
+  transition: background-color 0.3s;
+  transition: color 0.3s;
+} */
+/* .container-room .left-cont .footer .utils .invite-icon:hover {
   cursor: pointer;
   color: white;
   background-color: #393e46;
@@ -716,7 +786,7 @@ navbar .logo {
   background-color: #393e46;
   
   
-} 
+}  */
 
 
 
@@ -775,6 +845,8 @@ navbar .logo {
   width: 30%;
   background-color: #ffffff;
   height: 100vh;
+  z-index: 999;
+  border: 1px solid black;
   /* Track */
   /* Handle */
   /* Handle on hover */
@@ -850,27 +922,40 @@ navbar .logo {
   box-shadow: 0px -4px 4px rgba(0, 0, 0, 0.15);
 }
 .container-room .right-cont .chat-input-cont .ci-cont {
-  width: 80%;
+  width: 90%;
 }
 .container-room .right-cont .chat-input-cont .ci-send {
   width: 20%;
   margin-left: 20px;
 }
-.container-room .right-cont .chat-input-cont .chat-input {
+.container-room .right-cont .chat-input-cont .two.uk-textarea.uk-margin {
   width: 100%;
   height: 36px;
   font-size: 0.85rem;
-  padding: 4px 10px;
+  padding: 2px 5px;
   border: none;
   border-bottom: 3px solid #4ecca3;
   color: #393e46;
 }
-.container-room .right-cont .chat-input-cont .chat-input:focus {
+.container-room .right-cont .chat-input-cont .two.uk-textarea.uk-margin:focus {
   outline: none;
+}
+.container-room .right-cont .chat-input-cont .second-btn {
+  background: white !important;
+  border: none;
+  border-bottom: 3px solid #4ecca3;
+}
+.container-room .right-cont .chat-input-cont .second-btn:hover {
+  cursor: pointer;
+  background: #4ecca3 !important;
+  border-radius: 50%;
+}
+.fg-emoji-container{
+  transform: translateX(-110%) translateY(-2%);
 }
 .container-room .right-cont .chat-input-cont .chat-send {
   height: 36px;
-  padding: 5px 20px;
+  padding: 5px 2px;
   border: none;
   background-color: white;
   color: #4ecca3;
@@ -1170,9 +1255,10 @@ ul.sub li a:hover {
 
 /* sub display*/
 ul.primary li:hover ul {
-  display: block;
+  display: grid ;
   background: #fff;
   width: 150px;
+  text-align: center;
 }
 
 /* keeps the tab background white */
@@ -1194,10 +1280,12 @@ ul.primary li:hover > a{
   .wrap {
     width: 100%;
     margin-top: 0px;
+
   }
   
    li {
     float: none;
+
   }
   
   ul.primary li:hover a {

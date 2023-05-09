@@ -7,6 +7,9 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" async defer>
+	<link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
+
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
     <script>
         const params = new URLSearchParams(location.search);
@@ -65,9 +68,9 @@
 				<li>
 					<a href="">Services</a>
 					<ul class="sub">
-						<li><a href="">SynergiaEdit</a></li>
-						<li><a href="">SynergiaChat</a></li>
-                        <li><a href="">SynergiaCoding</a></li>
+						<li><a href="">SynEdit</a></li>
+						<li><a href="chat-link">SynChat</a></li>
+                        <li><a href="">SynCoding</a></li>
 					</ul>
 				</li>
 				
@@ -99,10 +102,10 @@
 					<div class="nametag" > 
 					    <canvas id="myCanvas" width="50" height="50" >
 						</canvas>
-					    <div id="raiseHand"> <img  id = "imH"  width="50" height="50" src="raisedhand.png" >  </div> 
+					    <div id="raiseHand"> <img  id = "imH"  width="50" height="50" src="img/raisedhand.png" >  </div> 
 					    <div>&nbsp;&nbsp</div>
 					    <div id ="myname"> yourname  </div>
-						<div id="emoface"  ><img  id = "iml"  width="50" height="50" src="neutral.png" > </div>
+						<div id="emoface"  ><img  id = "iml"  width="50" height="50" src="img/neutral.png" > </div>
 						 <!-- <div id="raiseH"><img  id = "imHH"  width="50" height="50" src="raisedhand.png" >  </div> -->
 				  
 					</div>	
@@ -124,6 +127,12 @@
 				//gl.stroke();
 	}
 	</script>
+
+            <div id="editorParent">
+                <div id="editor" height="1000" width="1000">
+                </div>
+                <button id="ql-close"></button>
+            </div>
 
             <div class="whiteboard-cont"><canvas id="whiteboard" height="1000" width="1000"></canvas>
                 <div class="colors-cont">
@@ -167,6 +176,10 @@
                     <div class="board-icon tooltip">
                         <i class="fas fa-chalkboard"></i>
                         <span class="tooltiptext">Whiteboard</span>
+                    </div>
+                    <div class="text-icon  tooltip" id="textEditor">
+                        <i class="fas fa-solid fa-font"></i>
+                        <span class="tooltiptext">Text Editor</span>
                     </div>
 					<div class="invite-icon  tooltip" id="invite">
                         <i class="fas fa-user-plus"></i>
@@ -217,8 +230,13 @@
             </div>
 			
             <div class="chat-input-cont">
-                <div class="ci-cont"><input type="text" class="chat-input" placeholder="Type chat here.."></div>
-                <div class="ci-send"><button class="chat-send">Send</button></div>
+                <button style="background: #4ecca3;  width: 35px" class="second-btn uk-button uk-button-primary" >😃</button>
+                <!-- <div class="ci-cont" id="chat"><input type="text" class="chat-input" placeholder="Type chat here.."></div> -->
+                 <div class="ci-cont" cols="70">
+				<!-- <input type="textarea" class="two uk-textarea uk-margin" placeholder="Type chat here.."> -->
+				<textarea name="" id="chatinput" class="two uk-textarea uk-margin" autofocus></textarea>
+				 </div> 
+                 <div class="ci-send"><button class="chat-send">Send</button></div>
             </div>
 			
         </div> 
@@ -240,6 +258,7 @@
            
 			
         </div> 
+        
 		
 		  <!-- Start chat room 
         https://codepen.io/sajadhsm/pen/odaBdd
@@ -321,9 +340,25 @@
         <!-- End chat room -->
 
     </div>
-	
+    <script src="js/vanillaEmojiPicker.js"></script>
+		<script>
+			new EmojiPicker({
+				trigger: [
+					{
+						selector: '.second-btn',
+						insertInto: '.two'
+					}
+				],
+				closeButton: true,
+            //specialButtons: green
+			});
+
+		</script>
+
+    <script src="https://cdn.jsdelivr.net/npm/hark@1.2.3/hark.bundle.min.js"></script>
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="js/room.js"></script>
+    <script src="js/room.js" type="module"></script>
 </body>
 
 </html>
