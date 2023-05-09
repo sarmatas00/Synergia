@@ -331,6 +331,7 @@ socket.on('disconnect', function() {
 socket.on('updateUserList', function(users,groups) {
     var userfound = false;
     var ol = jQuery('<ol></ol>');
+    user_list=[];
     users.forEach(function(user) {
 		
 		
@@ -356,7 +357,7 @@ socket.on('updateUserList', function(users,groups) {
         if((new URLSearchParams(window.location.search)).get('name')===user.name){
             button.disabled=true;
         }else{
-            user_list.push(user.name);              //store usernames in room to use for groups
+            user_list.push(user);              //store users in room to use for groups
         }
 		
         list.append(button);
@@ -676,8 +677,13 @@ jQuery('#message-form').on('submit', function(e) {
 
     var messageTextbox = jQuery('[name=message]');
 
+    const isGroupChat = document.querySelector('#messages').style.display==='none'      //true if a group chat is open
+    const groupID = document.querySelector('#messages').nextSibling.id;                 //undefined group id if user not on a group chat
+    
     socket.emit('createMessage', {
-        text: messageTextbox.val()
+        text: messageTextbox.val(),
+        isGroupChat,
+        groupID
     }, function() {
         messageTextbox.val('')
     });
@@ -1252,25 +1258,39 @@ user is typing. If multiple users are typing at the same time text changes.
 Remove the message after 1 sec to ensure it vanishes after user has stopped typing */
 
 const chatInput = document.querySelector('#chatinput');
-const messageBox = document.querySelector('#messages');
+
 chatInput.addEventListener('input',()=>{
-    socket.emit('userTyping');
+    if(document.querySelectorAll('.chat__messages').length>1){                          //if a group chat is open
+        const isTypingInGroup = true;
+        const groupName = [...document.querySelectorAll('.chat__messages')].pop().id;           //last <ol> id is the open group chat's "name-room"
+        socket.emit('userTyping',isTypingInGroup,groupName);
+    }else{
+        const isTypingInGroup = false;
+        socket.emit('userTyping',isTypingInGroup,groupName="");
+    }
 })
 
-socket.on('userTyping',(user)=>{
-    const typingElement = document.createElement('div');
-    typingElement.classList.add('typing');
-    typingElement.style.fontSize='2em';
-    typingElement.style.margin='0 0 0.5em 1em';
-    if((new URLSearchParams(window.location.search)).get('name')!==user.name){
-        if(document.querySelectorAll('.typing').length<1){
-            typingElement.innerHTML=`User ${user.name} is typing...`;
-            messageBox.insertAdjacentElement('afterend',typingElement);
-            setTimeout(()=>{typingElement.remove()},1000);
-        }else if(!document.querySelector('.typing').innerText.includes(user.name)){
-            typingElement.innerHTML=`Multiple users are typing...`;
-            messageBox.insertAdjacentElement('afterend',typingElement);
-            setTimeout(()=>{typingElement.remove()},1000);
+socket.on('userTyping',(user,groupInfo)=>{
+    const {isTypingInGroup,groupName} = groupInfo;
+    const messageBox = [...document.querySelectorAll('.chat__messages')].pop();
+    //if user is not on a group chat emit userTyping info to all room users
+    //if he is a group chat and group list id equals group name, emit the userTyping info
+    //that means emit it to everyone that also is that group chat and currently has it opened for chating
+    if(!isTypingInGroup || (isTypingInGroup && messageBox.id==groupName)){                      
+        const typingElement = document.createElement('div');
+        typingElement.classList.add('typing');
+        typingElement.style.fontSize='2em';
+        typingElement.style.margin='0 0 0.5em 1em';
+        if((new URLSearchParams(window.location.search)).get('name')!==user.name){
+            if(document.querySelectorAll('.typing').length<1){
+                typingElement.innerHTML=`User ${user.name} is typing...`;
+                messageBox.insertAdjacentElement('afterend',typingElement);
+                setTimeout(()=>{typingElement.remove()},1000);
+            }else if(!document.querySelector('.typing').innerText.includes(user.name)){
+                typingElement.innerHTML=`Multiple users are typing...`;
+                messageBox.insertAdjacentElement('afterend',typingElement);
+                setTimeout(()=>{typingElement.remove()},1000);
+            }
         }
     }
 })
@@ -1287,13 +1307,13 @@ document.querySelector('#groupBtn').addEventListener('click',(evt)=>{
     document.querySelectorAll('.form-field-check').forEach((checkbox)=>checkbox.remove())
     const prevNames=[];
     for(const user of user_list){
-        if(!prevNames.includes(user)){
+        if(!prevNames.includes(user.name)){
             const newPersonElement = document.createElement('div');
             newPersonElement.classList.add('form-field-check');
-            newPersonElement.innerHTML=`<input type="checkbox" name="user" value = ${user} />
-            <label for="user">${user}</label>`
+            newPersonElement.innerHTML=`<input type="checkbox" name="user" value=${user.id} />
+            <label for="user">${user.name}</label>`
             document.querySelector('.startPeopleList').insertAdjacentElement('afterend',newPersonElement);
-            prevNames.push(user);
+            prevNames.push(user.name);
         }        
     }
     groupFormContainer.style.display="block";
@@ -1313,7 +1333,8 @@ the new group. In the end red border goes away and the form vanishes */
 document.querySelector('.makeGroup').addEventListener('click',(evt)=>{
     evt.preventDefault();
     const nameInput = document.getElementById('groupName');
-    if(nameInput.value===""){
+    const sameGroupName = [...document.querySelectorAll('.groupNameLabel')].some((name)=>name.innerText.replace('Group','').trim()==nameInput.value);           //returs true if a group with the same name already exists in that room
+    if(nameInput.value==="" || sameGroupName){             
         nameInput.style.border='3px solid red'
     }else{
         const formData = new FormData(groupForm);
@@ -1324,7 +1345,10 @@ document.querySelector('.makeGroup').addEventListener('click',(evt)=>{
                 groupName = value;
             }else{
                 if(value){
-                    names.push(value);
+                    const username = user_list.find((user)=>user.id===value).name;
+                    if(username!==undefined){
+                        names.push(username);
+                    }
                 }
             }
         }
@@ -1344,7 +1368,7 @@ socket.on('add group',(group)=>{
         addGroup(group);
     }
 });
-
+ 
 /**
   Adds a new group to a list with a label and a button.
  The parameter "group" is an object that contains information about a group, including
@@ -1356,18 +1380,104 @@ function addGroup(group){
     groups.append(newGroup);
 
     const button = document.createElement('button');
-    button.innerHTML = 'Send Message';
-    button.classList.add('btn', 'btn-success');
+    button.innerHTML = 'Enter';
+    button.classList.add('btn', 'btn-success','groupEnterBtn');
+    button.id=`${group.name}-${group.room}`                          //group id
+    button.addEventListener('click',groupChatEvent);
     const label = document.createElement('div');
-    label.id=`${group.name}-${group.room}`                          //group id
 
 
     
-    label.innerHTML = `<label>${group.name} <span>Group</span></label><label>${group.users.length} Users</label>`
+    label.innerHTML = `<label class='groupNameLabel'>${group.name} <span>Group</span></label><label>${group.users.length} Users</label>`
 
     newGroup.appendChild(label);
     newGroup.appendChild(button);
 };
+
+/*Enter group chat event.  Finds all the other available group chats and 
+prohibits the user from entering another in the same time. Then it sends the particular group chat
+info to the server
+*/
+function groupChatEvent(evt){
+    const groupEnterBtns = document.querySelectorAll('.groupEnterBtn');
+    [...groupEnterBtns].forEach(btn=>btn.disabled=true);
+    socket.emit('messageGroupChat',{id:evt.target.id})
+}
+
+/*Every times a user sends a new message to a group chat, this event is fired from the server.
+Given the group chat names the user has entered, we first find the enter chat button and check if it is disabled,
+meaning that user in the room pressed it and he indeed is in that chat.
+After that we create a new group chat messagelist if it is not already on screen and insert it in place of the main
+messagelist. Also we set the exit-return button that user can press to exit the group chat back to the main chat and put it on the screen.
+That button removes the group chat message list and resets all group chat enter buttons to available. In the end that button get also destroyed.
+*/
+socket.on('notifyUserGroup',(info)=>{
+    const {groupUsers,groupMsg,Group} = info;
+    const activateGroupBtn = document.querySelector(`#${Group}-${(new URLSearchParams(window.location.search)).get('room')}`);
+    if(groupUsers.includes(currentusr) && activateGroupBtn!==null && activateGroupBtn.disabled){
+        const messageList = document.querySelector('#messages');
+        let groupMessageList = document.querySelector(`#${Group}`); 
+        if(groupMessageList===null){
+             groupMessageList = messageList.cloneNode();
+             groupMessageList.id=`${Group}`;
+             messageList.insertAdjacentElement('afterend',groupMessageList);
+            groupMessageList.style.display='block';
+ 
+
+            const closeGroupBtn = document.createElement('btn')
+            closeGroupBtn.classList.add('btn','btn-success','closeGroupBtn');
+            closeGroupBtn.innerHTML = 'Return';
+            messageList.insertAdjacentElement('beforebegin',closeGroupBtn);
+            closeGroupBtn.addEventListener('click',(evt)=>{
+                groupMessageList.remove()
+                messageList.style.display='block';
+                const groupEnterBtns = document.querySelectorAll('.groupEnterBtn');
+                [...groupEnterBtns].forEach(btn=>btn.disabled=false);
+                evt.target.remove();
+
+            })
+
+        }
+        /*If the main message list is currently on screen, we have to hide it and load all the group chat messages on the new
+        message list. Otherwise we just load the last message a user has sent, in order to save time.
+        */
+        if(messageList.style.display!=='none'){
+            groupMessageList.innerHTML+=`<h2>Group Chat: <span style='color:red;font-size:30px'>${Group}</span></h2`
+            groupMsg.forEach((message)=>{
+                var formattedTime = moment(message.createdAt).format('h:mm a');
+                var template = jQuery('#message-template').html();
+                var html = Mustache.render(template, {
+                    text: message.text,
+                    from: message.from,
+                    createdAt: formattedTime
+                });
+                groupMessageList.innerHTML+=html
+                messageList.style.display='none';
+        
+            })
+            
+        }else{
+            message=groupMsg[groupMsg.length-1];
+            var formattedTime = moment(message.createdAt).format('h:mm a');
+                var template = jQuery('#message-template').html();
+                var html = Mustache.render(template, {
+                    text: message.text,
+                    from: message.from,
+                    createdAt: formattedTime
+                });
+
+                if(html.trim()!==groupMessageList.children[groupMessageList.childElementCount-1].outerHTML.trim()){
+                    groupMessageList.innerHTML+=html;
+                }
+        }
+        
+        
+        
+        
+        scrollToBottom(`#${Group}`);
+    }
+
+})
 
 
 

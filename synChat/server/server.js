@@ -15,6 +15,7 @@ const server = http.createServer(app);
 const io = socketIO(server);
 const users = new Users();
 const groups={};
+const groupMessages=[];
 
 app.use(express.static(publicPath));
 
@@ -48,14 +49,21 @@ io.on('connection', (socket) => {
 
     socket.on('createMessage', (message, callback) => {
         const user = users.getUser(socket.id);
-        console.log(user);
-        console.log(socket.id);
 
-        if (user && isRealString(message.text)) {
+        //If user is the new message does not come from a group chat, emit back only the message
+        if (user && isRealString(message.text) && !message.isGroupChat) {
             io.to(user.room).emit('newMessage', generateMessage(user.name, message.text));
+        }else if(user && isRealString(message.text) && message.isGroupChat){                    //if is its a group chat message
+            groupMessages.forEach((msg)=>{                                                      //find and emit all the messages of that group
+                if(msg.id===message.groupID){
+                    msg.messages.push(generateMessage(user.name, message.text));
+                }
+                
+            })
+            io.to(user.room).emit('notifyUserGroup', getGroupUsersMessages(user,{id:message.groupID}));
         }
-
-        callback();
+        
+        callback(); 
     });
 	
 	 socket.on('userpresence', (message) => {
@@ -223,9 +231,10 @@ io.on('connection', (socket) => {
 
     //when a user is typing something, emits the info to other users
     //to display a typing message on screen
-    socket.on('userTyping',()=>{
+    //If the user is currently typing in a group chat, emits the group name as well
+    socket.on('userTyping',(isTypingInGroup,groupName)=>{
         const user = users.getUser(socket.id);
-        io.to(user.room).emit('userTyping',user);
+        io.to(user.room).emit('userTyping',user,{isTypingInGroup,groupName});
 
     })
 
@@ -237,7 +246,46 @@ io.on('connection', (socket) => {
         groups[groupName]={name:groupName,users:userNames,creator:users.getUser(socket.id).name,room:users.getUser(socket.id).room};
         io.to(users.getUser(socket.id).room).emit('add group',groups[groupName]);
     })
+
     
+    /* Emits group chat messages and users related to a user in a group with name->userid */
+    socket.on('messageGroupChat', (userid) => {
+        const user = users.getUser(socket.id);
+
+        io.to(user.room).emit('notifyUserGroup',getGroupUsersMessages(user,userid));
+    });
+
+    /*
+    The function retrieves the list of users and messages for a specific group chat.
+    It searches for the group using group name and user room and then gets the messages
+    related to that group. If there still no messages (empty chat), it creates and pushes a
+    welcoming message to the chat
+     */
+    function getGroupUsersMessages(user,userid){
+        let groupUsers=[];
+        let groupMsg=[];
+        let Group="";
+        for(const group in groups){
+            if(group===userid.id.split('-')[0] && groups[group].room==user.room){
+                Group=group;
+                groupUsers=groups[group].users
+                // groupUsers.push(user.name);
+
+                
+                
+                if(groupMessages.find((msg)=>msg.id===group)==undefined){
+                    groupMessages.push({id:group,messages:[generateMessage('Admin', 'Welcome to the chat app')]})
+                    groupMsg.push(generateMessage('Admin', 'Welcome to the chat app'));
+                }else{
+                    groupMsg=groupMessages.find((msg)=>msg.id===group)
+                    groupMsg=groupMsg.messages;
+
+                }
+            }
+        } 
+        return {groupUsers, groupMsg,Group}
+    }
+
     //end file uploading part
     socket.on('disconnect', () => {
         const user = users.removeUser(socket.id);

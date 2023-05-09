@@ -563,5 +563,16 @@ ol li{
     width: max-content;
 }
 
+.closeGroupBtn{
+    position: absolute;
+    top: 2em;
+    right: 20%;
+    width: max-content;
+    font-size: 2em;
+    border-radius: 20px;
+    background-color: white;
+    color:#41a700 ;
+}
+
   
 
