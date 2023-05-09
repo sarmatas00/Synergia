@@ -6,9 +6,15 @@ const socketio = require('socket.io');
 const emoji = require('node-emoji');
 const PORT = process.env.PORT || 3000;
 const ysocketio= require("y-socket.io/dist/server").YSocketIO
+const {spawn}= require('child_process');
+const net = require('net');
 
 const http = require('https');
 const fs = require('fs');
+
+//get database configuration
+const write=require('firebase/database');
+const db=require('./config.js');
 
 
 // Yes, TLS is required
@@ -16,6 +22,28 @@ const serverConfig = {
   key: fs.readFileSync('key.pem'),
   cert: fs.readFileSync('cert.pem'),
 };
+
+// This function takes a port number as input and returns a Promise
+//that resolves to a boolean value indicating whether or not the port is in use.
+//It gets called when synChat server runs more than one time
+//to avoid multiple port usage and errors
+const isPortInUse=(port)=>{
+    return new Promise((resolve,reject)=>{
+        const server= net.createServer();
+        server.once('error',(err)=>{
+            if(err.code==='EADDRINUSE'){
+                resolve(true);
+            }else{
+                reject(err);
+            }
+        });
+        server.once('listening',()=>{
+            server.close();
+            resolve(false);
+        });
+        server.listen(port);
+    });
+}
 
 const app = express();
 const server = http.createServer(serverConfig, app);
@@ -169,6 +197,30 @@ io.on('connect', socket => {
             socket.to(roomid).emit('detect-speaker', rooms[roomid].filter(pid => pid == socket.id),isSpeaking)              //transmit the sid of user speaking
         }
     })
+
+    // This route handles the request to start the synChat server
+    //when the user wants to enter synChat
+    app.get('/start-chat-server',async (req,res)=>{
+        // Check if the second server is already running
+        const isRunning = await isPortInUse(3001);
+        if (isRunning) {
+            console.log('The chat server is already running');
+        } else {
+            // If the server is not running, start it by spawning a new child process and running 'npm start'
+            const child = spawn('npm',['start'],{
+                cwd:path.join(__dirname,'synChat'),
+                shell:true,
+                stdio:'inherit',
+            })
+    
+            // Once the child process exits, log the exit code to the console
+            child.on('close',(code)=>{
+                console.log(`process exited with code ${code}`);
+            })
+        }
+        res.sendStatus(200);
+    });
+    
     
 })
 
