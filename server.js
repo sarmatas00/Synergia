@@ -12,9 +12,8 @@ const net = require('net');
 const http = require('https');
 const fs = require('fs');
 
-//get database configuration
-const write=require('firebase/database');
-const db=require('./config.js');
+const db=require('./dbOperations.js');
+
 
 
 // Yes, TLS is required

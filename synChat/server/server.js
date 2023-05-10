@@ -8,6 +8,9 @@ const {generateMessage, generateLocationMessage,generateFiles} = require('./util
 const {isRealString} = require('./utils/validation');
 const {Users} = require('./utils/users');
 
+//get database configuration
+const db = require('../../dbOperations.js');
+
 const publicPath = path.join(__dirname, '../public');
 const port = process.env.PORT || 3001;
 const app = express();
@@ -16,6 +19,7 @@ const io = socketIO(server);
 const users = new Users();
 const groups={};
 const groupMessages=[];
+let startTime,restart={};
 
 app.use(express.static(publicPath));
 
@@ -32,18 +36,55 @@ app.get('/:file(*)', function(req, res, next){ // this routes all types of file
 io.on('connection', (socket) => {
     console.log('New user connected');
 
-    socket.on('join', (params, callback) => {
+    socket.on('join',async (params, callback) => {
         if (!isRealString(params.name) || !isRealString(params.room)) {
             return callback('Name and room name are required.');
         }
+        
+        if(users.getUsersByName(params.name).length){
+            return callback('This username is already in use.');
+        } 
+        /*if the user has refreshed the page, we clear the timeout that archives the room's chat messages */
+        if(restart[params.room]){
+            clearTimeout(restart[params.room]);
+        }
+        /*if the user has refreshed the page, we clear the timeout that emits the message that he disconnected to
+        the othe users of the room */
+        if(restart[params.name]){
+            clearTimeout(restart[params.name]); 
+        }
 
         socket.join(params.room);
-        users.removeUser(socket.id);
+        users.removeUser(socket.id); 
         users.addUser(socket.id, params.name, params.room);
-
+        
         io.to(params.room).emit('updateUserList', users.getUserList(params.room),groups);
         socket.emit('newMessage', generateMessage('Admin', 'Welcome to the chat app'));
-        socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined.`));
+        
+        
+        const messages=await db.getMessages(params.room);                   //get all the stored messages for that chatroom
+        let found=false;
+        /*if there are any messages, we try to display them to the user on the page again if he has refreshed the page,
+        or returns to the room a little later, provided it still exists.
+        For each user though, we only send back the messages that he started seeing after he first logged into the chat
+        */
+        if(messages){
+            Object.values(messages).forEach(msg=>{
+                if(found){
+                    socket.emit('newMessage',generateMessage(msg.from,msg.text));
+                }
+                if(msg.text.includes(params.name)){
+                    found=true;
+                }
+            }); 
+        }
+        /*if the current user is new to the chat, emit the welcome message to others and store
+        it in the db to have a record of when he entered
+        */
+        if(!found){
+            socket.broadcast.to(params.room).emit('newMessage', generateMessage('Admin', `${params.name} has joined.`));
+            db.storeMessage(generateMessage('Admin', `${params.name} has joined.`),params.room);
+        }
         callback();
     });
 
@@ -52,14 +93,16 @@ io.on('connection', (socket) => {
 
         //If user is the new message does not come from a group chat, emit back only the message
         if (user && isRealString(message.text) && !message.isGroupChat) {
+            db.storeMessage(generateMessage(user.name, message.text),user.room);                //store each message in the room's mainChat db
             io.to(user.room).emit('newMessage', generateMessage(user.name, message.text));
         }else if(user && isRealString(message.text) && message.isGroupChat){                    //if is its a group chat message
             groupMessages.forEach((msg)=>{                                                      //find and emit all the messages of that group
-                if(msg.id===message.groupID){
+                if(msg.id===message.groupID){ 
                     msg.messages.push(generateMessage(user.name, message.text));
                 }
                 
             })
+            // db.storeMessage(generateMessage(user.name, message.text),user.room);
             io.to(user.room).emit('notifyUserGroup', getGroupUsersMessages(user,{id:message.groupID}));
         }
         
@@ -68,13 +111,10 @@ io.on('connection', (socket) => {
 	
 	 socket.on('userpresence', (message) => {
         const user = users.getUser(socket.id);
-        console.log(user);
-        console.log(socket.id);
-		console.log(message);
 
         if (user ) {
             io.to(user.room).emit('useronoff', message);
-			console.log(socket.id);
+			
         }
 
         
@@ -85,7 +125,7 @@ io.on('connection', (socket) => {
            message:message.message,
            user:users.getUser(socket.id)
        });
-       console.log(message.message);
+       
     });
     socket.on('privateMessageWindow', (userid) => {
         const user = users.getUser(socket.id);
@@ -289,10 +329,26 @@ io.on('connection', (socket) => {
     //end file uploading part
     socket.on('disconnect', () => {
         const user = users.removeUser(socket.id);
+        console.log("User disconnected");
+
+        /*when the last user in a room disconnects, we set a timeout to archive the
+        room's messages. This gets done after 1 sec, to ensure the user has indeed left
+        the room and has not refreshed the page
+        */
+        if(user && !users.getUserList(user.room).length){  
+            restart[user.room]=setTimeout(()=>{db.archiveChatroom(user.room)},1000);
+            
+        }
 
         if (user) {
             io.to(user.room).emit('updateUserList', users.getUserList(user.room));
-            io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left.`));
+            /*the info that we sent to other users that this user has left the room, might not be sent
+            if the user has just refreshed his page
+            */
+            restart[user.name]=setTimeout(()=>{
+                io.to(user.room).emit('newMessage', generateMessage('Admin', `${user.name} has left.`));
+
+            },1000)
         }
     });
 });

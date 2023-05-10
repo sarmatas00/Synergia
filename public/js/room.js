@@ -1006,7 +1006,7 @@ else
    }
 
 })
-
+let emojiSID=[];
 socket.on('remove peer', sid => {
     if (document.getElementById(sid)) {
         document.getElementById(sid).remove();
@@ -1449,7 +1449,7 @@ function emojiListener(){
             intervalID=null;
 
             setTimeout(()=>{
-                for(sid in connections){
+                for(let sid in connections){
                     document.getElementById(`emo${sid}`).src="neutral.png";
                     console.log("neutralizing");
                 }
@@ -1486,7 +1486,7 @@ function turnOnEmojis(){
     let sids="";
     let ctr=0;
     //For every connected user we track his video and output the according emoji to his icon
-    for(sid in connections){
+    for(let sid in connections){
     console.log("Ctr ",++ctr);
     if(!emojiSID.includes(sid)){
     emojiSID.push(sid);
@@ -1498,9 +1498,9 @@ function turnOnEmojis(){
         {
         if(emoOn){
             
-        for(sid in connections){
+        for(let sid in connections){
             video=document.getElementById(`video${sid}`);
-            emoRem=document.getElementById(`emo${sid}`);
+            let emoRem=document.getElementById(`emo${sid}`);
 
             faceapi.loadTinyFaceDetectorModel('weights');
         faceapi.loadFaceLandmarkModel('weights');
@@ -1645,7 +1645,7 @@ function turnOnEmojis(){
         else
         {
             for(sid in connections){
-                document.getElementById(`emo${sid}`).src="neutral.png";
+                document.getElementById(`emo${sid}`).src="img/neutral.png";
                 console.log("neutralizing");
             }
             document.getElementById(`iml`).src="neutral.png";
