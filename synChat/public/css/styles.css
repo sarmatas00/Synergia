@@ -566,12 +566,28 @@ ol li{
 .closeGroupBtn{
     position: absolute;
     top: 2em;
-    right: 20%;
+    right: 12em;
     width: max-content;
     font-size: 2em;
     border-radius: 20px;
     background-color: white;
     color:#41a700 ;
+}
+
+.delGroupBtn{
+    position: absolute;
+    top: 2em;
+    right: 3em;
+    width: max-content;
+    font-size: 2em;
+    border-radius: 20px;
+    background-color: red;
+    color:white ;
+}
+.delGroupBtn:hover{
+    
+    background-color: white;
+    color:red ;
 }
 
   

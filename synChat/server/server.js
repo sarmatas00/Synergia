@@ -18,8 +18,7 @@ const server = http.createServer(app);
 const io = socketIO(server);
 const users = new Users();
 const groups={};
-const groupMessages=[];
-let startTime,restart={};
+let restartGroup={},restart={};
 
 app.use(express.static(publicPath));
 
@@ -47,11 +46,20 @@ io.on('connection', (socket) => {
         /*if the user has refreshed the page, we clear the timeout that archives the room's chat messages */
         if(restart[params.room]){
             clearTimeout(restart[params.room]);
+            delete restart[params.room];
         }
         /*if the user has refreshed the page, we clear the timeout that emits the message that he disconnected to
         the othe users of the room */
         if(restart[params.name]){
             clearTimeout(restart[params.name]); 
+            delete restart[params.name];
+        }
+
+        /*if the user has refreshed the page, we clear the timeouts that remove him from the groups
+        or delete the groups */
+        if(restartGroup[params.name]){
+            restartGroup[params.name].forEach((timeout)=>clearTimeout(timeout))
+            delete restartGroup[params.name];
         }
 
         socket.join(params.room);
@@ -88,7 +96,7 @@ io.on('connection', (socket) => {
         callback();
     });
 
-    socket.on('createMessage', (message, callback) => {
+    socket.on('createMessage',async (message, callback) => {
         const user = users.getUser(socket.id);
 
         //If user is the new message does not come from a group chat, emit back only the message
@@ -96,14 +104,14 @@ io.on('connection', (socket) => {
             db.storeMessage(generateMessage(user.name, message.text),user.room);                //store each message in the room's mainChat db
             io.to(user.room).emit('newMessage', generateMessage(user.name, message.text));
         }else if(user && isRealString(message.text) && message.isGroupChat){                    //if is its a group chat message
-            groupMessages.forEach((msg)=>{                                                      //find and emit all the messages of that group
-                if(msg.id===message.groupID){ 
-                    msg.messages.push(generateMessage(user.name, message.text));
-                }
+            /*get all group messages for this room from db*/
+            const groupMessages = await db.getGroupMessages(user.room,message.groupID);
+            if(groupMessages){                                                     
+                    await db.storeGroupMessage(generateMessage(user.name, message.text),user.room,message.groupID);                 //find and emit all the messages of that group
                 
-            })
+            }
             // db.storeMessage(generateMessage(user.name, message.text),user.room);
-            io.to(user.room).emit('notifyUserGroup', getGroupUsersMessages(user,{id:message.groupID}));
+            io.to(user.room).emit('notifyUserGroup',await getGroupUsersMessages(user,{id:message.groupID}));
         }
         
         callback(); 
@@ -121,10 +129,10 @@ io.on('connection', (socket) => {
     });
 	// && isRealString(message.text)
     socket.on('createPrivateMessage', (message) => {
-       socket.broadcast.to(message.userid).emit('newPrivateMessage',{
+                    socket.broadcast.to(message.userid).emit('newPrivateMessage',{
            message:message.message,
            user:users.getUser(socket.id)
-       });
+                    });
        
     });
     socket.on('privateMessageWindow', (userid) => {
@@ -289,46 +297,74 @@ io.on('connection', (socket) => {
 
     
     /* Emits group chat messages and users related to a user in a group with name->userid */
-    socket.on('messageGroupChat', (userid) => {
+    socket.on('messageGroupChat',async (userid) => {
         const user = users.getUser(socket.id);
 
-        io.to(user.room).emit('notifyUserGroup',getGroupUsersMessages(user,userid));
+        io.to(user.room).emit('notifyUserGroup',await getGroupUsersMessages(user,userid));
     });
 
     /*
     The function retrieves the list of users and messages for a specific group chat.
     It searches for the group using group name and user room and then gets the messages
     related to that group. If there still no messages (empty chat), it creates and pushes a
-    welcoming message to the chat
+    welcoming message to the group chat in db
      */
-    function getGroupUsersMessages(user,userid){
+    async function getGroupUsersMessages(user,userid){
         let groupUsers=[];
         let groupMsg=[];
         let Group="";
+        let creator="";
         for(const group in groups){
             if(group===userid.id.split('-')[0] && groups[group].room==user.room){
                 Group=group;
-                groupUsers=groups[group].users
-                // groupUsers.push(user.name);
+                groupUsers=groups[group].users;
+                creator=groups[group].creator;
 
-                
-                
-                if(groupMessages.find((msg)=>msg.id===group)==undefined){
-                    groupMessages.push({id:group,messages:[generateMessage('Admin', 'Welcome to the chat app')]})
-                    groupMsg.push(generateMessage('Admin', 'Welcome to the chat app'));
+                const groupMessages = await db.getGroupMessages(user.room,group);
+                if(!groupMessages){
+                                                                          
+                        await db.storeGroupMessage(generateMessage('Admin', 'Welcome to the chat app'),user.room,group);
+                        groupMsg.push(generateMessage('Admin', 'Welcome to the chat app'));
+                    
                 }else{
-                    groupMsg=groupMessages.find((msg)=>msg.id===group)
-                    groupMsg=groupMsg.messages;
-
+                    groupMsg=Object.values(groupMessages);
                 }
+                
             }
         } 
-        return {groupUsers, groupMsg,Group}
+        
+        return {groupUsers, groupMsg,Group,creator};
     }
 
-    //end file uploading part
+    /*when the creator of a group wants to delete it, archive all the group messages and remove it
+    from the group list */
+    socket.on('delete group',(group)=>{
+        const user = users.getUser(socket.id);
+        if(groups){
+            db.archiveGroupChatroom(user.room,groups[group].name);
+            delete groups[group];
+        }
+        io.to(user.room).emit('updateUserList', users.getUserList(user.room),groups);
+    });
+    
+
     socket.on('disconnect', () => {
         const user = users.removeUser(socket.id);
+        /*filter out the disconnecting user from any groups he participates
+        if he is the last member of any of these groups, also delete the group
+        this happens 2 sec after he exits the room, which reverts the changes in case the member just refreshed the page */
+        if(groups){
+            restartGroup[user.name]=[];
+            Object.keys(groups).forEach((group)=>{
+                restartGroup[user.name].push(setTimeout(()=>{
+                    groups[group].users=groups[group].users.filter(name=>name!==user.name)
+                    if(!groups[group].users.length){
+                        db.archiveGroupChatroom(user.room,groups[group].name);
+                        delete groups.group; 
+                    }
+                },2000))
+            })
+        }
         console.log("User disconnected");
 
         /*when the last user in a room disconnects, we set a timeout to archive the
@@ -337,11 +373,10 @@ io.on('connection', (socket) => {
         */
         if(user && !users.getUserList(user.room).length){  
             restart[user.room]=setTimeout(()=>{db.archiveChatroom(user.room)},1000);
-            
         }
 
         if (user) {
-            io.to(user.room).emit('updateUserList', users.getUserList(user.room));
+            io.to(user.room).emit('updateUserList', users.getUserList(user.room),groups);
             /*the info that we sent to other users that this user has left the room, might not be sent
             if the user has just refreshed his page
             */

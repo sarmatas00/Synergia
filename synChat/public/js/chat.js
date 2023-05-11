@@ -332,6 +332,7 @@ socket.on('updateUserList', function(users,groups) {
     var userfound = false;
     var ol = jQuery('<ol></ol>');
     user_list=[];
+    
     users.forEach(function(user) {
 		
 		
@@ -425,8 +426,8 @@ socket.on('updateUserList', function(users,groups) {
     /* iterating through existing groups and checking if the current user is
     included. If the user is included, it passes the group as an argument to add the group to
     the page. */
+    document.querySelector('.groupList').innerHTML='';          //empty group list before adding groups to the page
 	for(const group in groups){
-        document.querySelector('.groupList').innerHTML='';          //empty group list
         if(groups[group].users.includes(currentusr)){
             addGroup(groups[group]);
         }   
@@ -1342,7 +1343,7 @@ document.querySelector('.makeGroup').addEventListener('click',(evt)=>{
         let groupName="";
         for (const [key, value] of formData) {
             if(key==="name"){
-                groupName = value;
+                groupName = value.split(" ").join("");              //eliminate possible spaces in group name
             }else{
                 if(value){
                     const username = user_list.find((user)=>user.id===value).name;
@@ -1382,7 +1383,7 @@ function addGroup(group){
     const button = document.createElement('button');
     button.innerHTML = 'Enter';
     button.classList.add('btn', 'btn-success','groupEnterBtn');
-    button.id=`${group.name}-${group.room}`                          //group id
+    button.id=`${group.name}-${group.room}`.split(' ').join('');                          //group id
     button.addEventListener('click',groupChatEvent);
     const label = document.createElement('div');
 
@@ -1410,10 +1411,12 @@ meaning that user in the room pressed it and he indeed is in that chat.
 After that we create a new group chat messagelist if it is not already on screen and insert it in place of the main
 messagelist. Also we set the exit-return button that user can press to exit the group chat back to the main chat and put it on the screen.
 That button removes the group chat message list and resets all group chat enter buttons to available. In the end that button get also destroyed.
+Finally for the creator of a group, a delete button is displayed when entering his group. Pressing that archives all the group messages
+and removes the group from the page for all members.
 */
 socket.on('notifyUserGroup',(info)=>{
-    const {groupUsers,groupMsg,Group} = info;
-    const activateGroupBtn = document.querySelector(`#${Group}-${(new URLSearchParams(window.location.search)).get('room')}`);
+    const {groupUsers,groupMsg,Group,creator} = info;
+    const activateGroupBtn = document.querySelector(`#${Group}-${(new URLSearchParams(window.location.search)).get('room')}`.split(' ').join(''));
     if(groupUsers.includes(currentusr) && activateGroupBtn!==null && activateGroupBtn.disabled){
         const messageList = document.querySelector('#messages');
         let groupMessageList = document.querySelector(`#${Group}`); 
@@ -1434,8 +1437,22 @@ socket.on('notifyUserGroup',(info)=>{
                 const groupEnterBtns = document.querySelectorAll('.groupEnterBtn');
                 [...groupEnterBtns].forEach(btn=>btn.disabled=false);
                 evt.target.remove();
+                document.querySelector('.delGroupBtn').remove();
 
             })
+
+            if(creator===currentusr){
+                const delGroupBtn = document.createElement('btn')
+                delGroupBtn.classList.add('btn','btn-success','delGroupBtn');
+                delGroupBtn.innerHTML = 'Delete group';
+                messageList.insertAdjacentElement('beforebegin',delGroupBtn);
+                delGroupBtn.addEventListener('click',(evt)=>{
+                    closeGroupBtn.click();
+                    socket.emit('delete group',Group);
+                    evt.target.remove();
+    
+                })
+            }
 
         }
         /*If the main message list is currently on screen, we have to hide it and load all the group chat messages on the new
