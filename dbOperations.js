@@ -28,13 +28,17 @@ It removes all the messages from that chatroom and pushes them to the archive se
 function archiveChatroom(room){
     const dbref = operator.ref(db);
     const newRef = operator.ref(db,`messages/mainChat/archives/`);
-    operator.get(operator.child(dbref,`messages/mainChat/${room}`)).then((messages)=>{
-        if(messages.exists()){
-            
-            operator.push(newRef,messages.val())
-            operator.remove(operator.ref(db,`messages/mainChat/${room}`));
-        }
-    })
+    try {
+        operator.get(operator.child(dbref,`messages/mainChat/${room}`)).then((messages)=>{
+            if(messages.exists()){
+                
+                operator.push(newRef,messages.val())
+                operator.remove(operator.ref(db,`messages/mainChat/${room}`));
+            }
+        })
+    } catch (error) {
+        console.log(error);
+    }
     
 }
 
@@ -44,13 +48,17 @@ It removes all the messages from that chatroom and pushes them to the archive se
 function archiveGroupChatroom(room,group){
     const dbref = operator.ref(db);
     const newRef = operator.ref(db,`messages/groupChat/archives/`);
-    operator.get(operator.child(dbref,`messages/groupChat/${room}/${group}/messages`)).then((messages)=>{
-        if(messages.exists()){
-            
-            operator.push(newRef,messages.val())
-            operator.remove(operator.ref(db,`messages/groupChat/${room}/${group}`));
-        }
-    })
+    try {
+        operator.get(operator.child(dbref,`messages/groupChat/${room}/${group}/messages`)).then((messages)=>{
+            if(messages.exists()){
+                
+                operator.push(newRef,messages.val())
+                operator.remove(operator.ref(db,`messages/groupChat/${room}/${group}`));
+            }
+        })
+    } catch (error) {
+        console.log(error);
+    }
     
 }
 
@@ -59,9 +67,13 @@ returns them to the server for displaying*/
 async function getMessages(room){
     const dbRef = operator.ref(db);
     let messages={};
-    messages = await operator.get(operator.child(dbRef,`messages/mainChat/${room}`))
-    if(messages.exists()){
-        return messages.val();
+    try {
+        messages = await operator.get(operator.child(dbRef,`messages/mainChat/${room}`))
+        if(messages.exists()){
+            return messages.val();
+        }
+    } catch (error) {
+        console.log(error);
     }
     return null;
     
@@ -72,9 +84,13 @@ returns them to the server for displaying*/
 async function getGroupMessages(room,group){
     const dbRef = operator.ref(db);
     let messages={};
-    messages = await operator.get(operator.child(dbRef,`messages/groupChat/${room}/${group}/messages`))
-    if(messages.exists()){
-        return messages.val();
+    try {
+        messages = await operator.get(operator.child(dbRef,`messages/groupChat/${room}/${group}/messages`))
+        if(messages.exists()){
+            return messages.val();
+        }
+    } catch (error) {
+        console.log(error);
     }
     return null;
     
@@ -92,17 +108,23 @@ it is called every 10 minutes to update the time
  */
 async function updateSpeakingTime(room,username,time){
     const oldTime=await getSpeakingTime(room,username);
-    const dref=operator.ref(db,`speakingTime/${room}/${username}/`);
-    operator.update(dref,{time:time+parseInt(oldTime.time)});  
+    if(oldTime){
+        const dref=operator.ref(db,`speakingTime/${room}/${username}/`);
+        operator.update(dref,{time:time+parseInt(oldTime.time)});  
+    }
 }
 /*this method finds the total speaking time for a user in a room
 and returns it
  */
 async function getSpeakingTime(room,username){
     const dbRef = operator.ref(db);
-    time = await operator.get(operator.child(dbRef,`speakingTime/${room}/${username}/`))
-    if(time.exists()){
-        return time.val();
+    try {
+        const time = await operator.get(operator.child(dbRef,`speakingTime/${room}/${username}/`))
+        if(time.exists()){
+            return time.val();
+        }
+    } catch (error) {
+        console.log(error);
     }
     return null;
 }
