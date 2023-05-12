@@ -597,7 +597,7 @@ navbar .logo {
   margin: 0 auto;
   display: flex;
   margin-top: 30px;
-  width: 550px;
+  width: fit-content;
   background-color: #ffffff;
   border-radius: 10px;
   padding: 10px;
@@ -841,6 +841,33 @@ navbar .logo {
 .container-room .left-cont .footer .copycode-cont .copycode-button:focus {
   outline: none;
 }
+
+.container-room .left-cont #speakingModal {
+  display: none; 
+  position: fixed; 
+  z-index: 1;  
+  right: 3em;
+  bottom: 8em;
+  width: 30%; 
+  height: 7%; 
+  overflow: auto; 
+  
+}
+
+.container-room .left-cont #speakingModal .content {
+  background-color: aqua;
+  padding: 20px;
+  border: 2px solid #888;
+  width: 100%; 
+  height: 100%;
+  text-align: center;
+}
+
+.container-room .left-cont #speakingModal .content p{
+    font-size: large;
+
+}
+
 .container-room .right-cont {
   width: 30%;
   background-color: #ffffff;

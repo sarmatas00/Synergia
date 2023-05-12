@@ -64,7 +64,7 @@ let videoSocket = {};
 let roomBoard = {};
 let docs={};
 let cursors=[];
-
+let speakingTime={};
 
 io.on('connect', socket => {
 
@@ -75,19 +75,24 @@ io.on('connect', socket => {
         socketname[socket.id] = username;
         micSocket[socket.id] = 'on';
         videoSocket[socket.id] = 'on';
-
+ 
         if (rooms[roomid] && rooms[roomid].length > 0) {
             rooms[roomid].push(socket.id);
+            speakingTime[roomid].push({username,id:socket.id,total:0,start:0});             //initiate speaking time for user
+            db.storeSpeakingTime(roomid,username,0);                                        //store the initial time in db to update later
             socket.to(roomid).emit('message', `${username} joined the room.`, 'Bot', moment().format(
                 "h:mm a"
             ));
             io.to(socket.id).emit('join room', rooms[roomid].filter(pid => pid != socket.id), socketname, micSocket, videoSocket,docs[roomid]);
         }
         else {
+            speakingTime[roomid]=[{username,id:socket.id,total:0,start:0}];
+            db.storeSpeakingTime(roomid,username,0);
             rooms[roomid] = [socket.id];
+            
             io.to(socket.id).emit('join room', null, null, null, null,null);
         }
-
+    
         io.to(roomid).emit('user count', rooms[roomid].length);
         
     });
@@ -194,10 +199,46 @@ io.on('connect', socket => {
     })
 
     socket.on('detect-speaker',(roomid,isSpeaking)=>{                           //transmit to users in a room who is currently speaking
+        /*first find the index of user in speakingTime object to retrive his total speaking time */
+        if(speakingTime[roomid]){
+                const index=speakingTime[roomid].findIndex(user=>user.username===socketname[socket.id]);
+            if(isSpeaking){                                     //when he starts speaking, start measuring time
+                speakingTime[roomid][index].start=Date.now();
+            }else{                                              //when he stops speaking
+                speakingTime[roomid][index].total+=Math.floor((Date.now()-speakingTime[roomid][index].start)/1000);             //add time he spoke to total time in seconds 
+                if(speakingTime[roomid].reduce((prev,cur)=>{return prev+cur.total},0)/60>=10){                              //calculate if all users in room have 10 been speaking for 10 minutes
+                    warnUsers(speakingTime[roomid]);                                                            //warn the users that speak a lot and little
+                    speakingTime[roomid].forEach((user)=>{                                                      //update db with the times for each user and restart 10 minutes tracking for the room
+                        db.updateSpeakingTime(roomid,user.username,user.total);
+                        user.total=0;
+                    });
+                }
+            }
+ 
+        }
         if(rooms[roomid]){
             socket.to(roomid).emit('detect-speaker', rooms[roomid].filter(pid => pid == socket.id),isSpeaking)              //transmit the sid of user speaking
         }
     })
+
+    /*this function takes all speaking times for users in a room and calculated the percentage
+    that every user has spoken the last 10 minutes. Emit a message to speak more to the users that have less than 25% speaking time
+    and a message to speak more to users that have more than 75% speaking time */
+    function warnUsers(speakingTime){
+        const sum = speakingTime.reduce((prev,cur)=>{return prev+cur.total},0);
+        let percentages=[];
+        for(let i=0;i<speakingTime.length;i++){
+            percentages.push((speakingTime[i].total/sum)*100);
+            if(percentages[i]<25){
+                const speakingMuch=false;
+                io.to(speakingTime[i].id).emit("warn speaking",speakingMuch);
+            }else if(percentages[i]>75){
+                const speakingMuch=true;
+                io.to(speakingTime[i].id).emit("warn speaking",speakingMuch);
+            }
+        }
+        
+    }
 
     // This route handles the request to start the synChat server
     //when the user wants to enter synChat

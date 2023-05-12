@@ -1690,4 +1690,16 @@ syncChat.addEventListener('click',async (evt)=>{
     window.open('http://localhost:3001','_blank');
 })
 
+/*displays a modal on the user's screen that has contributed to the conversation a lot or very little
+the last 10 minutes. The modal goes away after 3 sec */
+socket.on("warn speaking",(speakingMuch)=>{
+    console.log(speakingMuch);
+    const modal = document.querySelector('#speakingModal');
+    (speakingMuch)?modal.children[0].children[0].innerText="Μονωπολεις στη συζητηση":modal.children[0].children[0].innerText="Εισαι ανενεργος στη συζητηση";
+    modal.style.display="block";
+    setTimeout(()=>{
+        modal.style.display='none';
+    },3000)
+})
+
 

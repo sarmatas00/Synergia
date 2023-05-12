@@ -22,7 +22,6 @@ async function storeGroupMessage(msg,room,group){
 }
 
 
-
 /*this method takes 2 references and gets called when a chat room is abandoned 
 It removes all the messages from that chatroom and pushes them to the archive section of messages table
 */
@@ -81,7 +80,35 @@ async function getGroupMessages(room,group){
     
 }
 
+/*this method stores the total speaking time for a user in a room
+ */
+function storeSpeakingTime(room,username,time){
+    const dref=operator.ref(db,`speakingTime/${room}/${username}/`);
+    operator.set(dref,{time});  
+}
+
+/*this method updates the total speaking time for a user in a room
+it is called every 10 minutes to update the time
+ */
+async function updateSpeakingTime(room,username,time){
+    const oldTime=await getSpeakingTime(room,username);
+    const dref=operator.ref(db,`speakingTime/${room}/${username}/`);
+    operator.update(dref,{time:time+parseInt(oldTime.time)});  
+}
+/*this method finds the total speaking time for a user in a room
+and returns it
+ */
+async function getSpeakingTime(room,username){
+    const dbRef = operator.ref(db);
+    time = await operator.get(operator.child(dbRef,`speakingTime/${room}/${username}/`))
+    if(time.exists()){
+        return time.val();
+    }
+    return null;
+}
 
 
 
-module.exports = {storeMessage,storeGroupMessage,archiveChatroom,getMessages,getGroupMessages,archiveGroupChatroom}
+
+
+module.exports = {getSpeakingTime,storeSpeakingTime,updateSpeakingTime,storeMessage,storeGroupMessage,archiveChatroom,getMessages,getGroupMessages,archiveGroupChatroom}

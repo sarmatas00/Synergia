@@ -110,7 +110,6 @@ io.on('connection', (socket) => {
                     await db.storeGroupMessage(generateMessage(user.name, message.text),user.room,message.groupID);                 //find and emit all the messages of that group
                 
             }
-            // db.storeMessage(generateMessage(user.name, message.text),user.room);
             io.to(user.room).emit('notifyUserGroup',await getGroupUsersMessages(user,{id:message.groupID}));
         }
         
