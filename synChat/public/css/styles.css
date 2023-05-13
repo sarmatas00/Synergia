@@ -591,4 +591,37 @@ ol li{
 }
 
   
+  .invite-icon{
+    background-color: #e6eaee;
+    text-align: center;
+    /* margin-left: 10px; */
+    color: #393e46;
+    padding: 30px;
+    border-radius: 50%;
+    height: 3em;
+    width: 3em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    transition: color 0.3s;
+    
+}
+.tooltip{
+    right: 4em;
+    top: 2em;
+    opacity: 100;
+}
+.tooltip .tooltiptext{
+      font-size: 1.2em;
+    
+  }
+  .invite-icon:hover {
+    cursor: pointer;
+    color: white;
+    background-color: #393e46;
+  }
+
+  
 

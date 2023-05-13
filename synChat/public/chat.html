@@ -12,6 +12,9 @@
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="/css/animate.css" type="text/css" />
 	<link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+
+    
 	<!-- UIkit JS -->
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.4/dist/js/uikit.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.4/dist/js/uikit-icons.min.js"></script>
@@ -46,6 +49,7 @@
 
 
 <div class="chat__main">
+    
     <div class="alert alert-success animated slideInDown text-center alert-display alert-hide" id="alert-box"> <span class="alert-text"></span></div>
     <div id="newUserModal">
         <div class="content">
@@ -68,7 +72,11 @@
             <button class="cancelGroupMake">Cancel</button>
             </div>
         </form>
-      </div>
+    </div>
+    <div class="invite-icon  tooltip" id="invite">
+        <i class="fas fa-user-plus"></i>
+        <span class="tooltiptext">Invite</span>
+    </div>
     <!-- Trigger the modal with a button -->
     <!-- Modal -->
     <div id="myModal" class="modal fade" role="dialog">
@@ -140,6 +148,7 @@
                         <button id="private-send-location">Send location</button> &nbsp; &nbsp;
                         <input type="file" id="private-send-file"  style="display: none" accept="*/*">
                         <button type="button" id="private-send-file-click"  onclick="upload_private_file()">Send File</button>
+                        
                     </div>
                 </div>
             </div>
@@ -169,6 +178,7 @@
         <button id="send-location">Send location</button> &nbsp; &nbsp;
         <input type="file" id="input-file" style="display: none" accept="*/*">
         <button type="button" id="send-file" onclick="upload_file()">Send File</button>
+        
     </div>
 </div>
 

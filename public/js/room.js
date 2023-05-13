@@ -392,7 +392,7 @@ inviteButt.addEventListener('click', () => {
 	
     
     document.getElementById('room').style.display = "block";
-    
+    CopyClassText();
 
 })
 

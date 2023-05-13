@@ -1496,6 +1496,28 @@ socket.on('notifyUserGroup',(info)=>{
 
 })
 
+/*this event is triggered when the user wans to copy the room's
+code to the clipboard to invite other members to the room
+We first create a new paragraph to inform the user the code has been copied and
+append it to the button. Then we put the room code to the clipboard and 
+after 3 sec the initial button text returns */
+const invIcon = document.querySelector(".invite-icon");
+invIcon.addEventListener("click",(evt)=>{
+    const code = (new URLSearchParams(window.location.search)).get('room');
+    const text = document.createElement("p");
+    text.innerHTML="Room code copied!";
+    invIcon.children[0].style.display="none"
+    evt.target.style.display='none'
+    evt.target.insertAdjacentElement("afterend",text);
+    navigator.clipboard.writeText(code)
+
+    setTimeout(()=>{
+        evt.target.style.display='block'
+        invIcon.children[0].style.display="block"
+        evt.target.nextSibling.remove()
+    },3000)
+});
+
 
 
 
