@@ -240,31 +240,31 @@ io.on('connect', socket => {
         
     }
 
-    // This route handles the request to start the synChat server
-    //when the user wants to enter synChat
-    app.get('/start-chat-server',async (req,res)=>{
-        // Check if the second server is already running
-        const isRunning = await isPortInUse(3001);
-        if (isRunning) {
-            console.log('The chat server is already running');
-        } else {
-            // If the server is not running, start it by spawning a new child process and running 'npm start'
-            const child = spawn('npm',['start'],{
-                cwd:path.join(__dirname,'synChat'),
-                shell:true,
-                stdio:'inherit',
-            })
-    
-            // Once the child process exits, log the exit code to the console
-            child.on('close',(code)=>{
-                console.log(`process exited with code ${code}`);
-            })
-        }
-        res.sendStatus(200);
-    });
     
     
 })
+// This route handles the request to start the synChat server
+//when the user wants to enter synChat
+app.get('/start-chat-server',async (req,res)=>{
+    // Check if the second server is already running
+    const isRunning = await isPortInUse(3001);
+    if (isRunning) {
+        console.log('The chat server is already running');
+    } else {
+        // If the server is not running, start it by spawning a new child process and running 'npm start'
+        const child = spawn('npm',['start'],{
+            cwd:path.join(__dirname,'synChat'),
+            shell:true,
+            stdio:'inherit',
+        })
+
+        // Once the child process exits, log the exit code to the console
+        child.on('close',(code)=>{
+            console.log(`process exited with code ${code}`);
+        })
+    }
+    res.sendStatus(200);
+});
 
 
 server.listen(PORT, () => console.log(`Server is up and running on port ${PORT}`));

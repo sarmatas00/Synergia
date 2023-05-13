@@ -1299,6 +1299,23 @@ ul.primary li:hover > a{
   color: #000;
 } 
 
+.synChat{
+  position: absolute;
+  right: 5em;
+  top: 2em;
+}
+.synChat a{
+  color: white;
+  background-color: #4ecca3;
+  border: 2px solid #4ecca3;
+  border-radius: 20px;
+  padding: 10px;
+}
+.synChat a:hover{
+  color: #4ecca3;
+  background-color:white ;
+}
+
 @media only screen and (max-width: 200px) {
   .decor {
     padding: 3px;
