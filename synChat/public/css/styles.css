@@ -172,6 +172,21 @@ ol li{
 .chat__footer #message-form .ci-cont{
     display: flex;
 }
+.chat__footer #message-form button{
+    border-radius: 40px;
+}
+.chat__footer #message-form> button{
+   border-radius: 50%;
+    margin: 4px 6px;
+    padding: 8px;
+    text-align: center;
+}
+.chat__footer #message-form> button:hover{
+   background-color: #e6eaee !important;
+}
+.fg-emoji-container{
+    transform: translateY(-70px);
+}
 
 .message {
     padding: 10px
@@ -566,7 +581,7 @@ ol li{
 .closeGroupBtn{
     position: absolute;
     top: 2em;
-    right: 12em;
+    right: 15em;
     width: max-content;
     font-size: 2em;
     border-radius: 20px;
@@ -577,7 +592,7 @@ ol li{
 .delGroupBtn{
     position: absolute;
     top: 2em;
-    right: 3em;
+    right: 7em;
     width: max-content;
     font-size: 2em;
     border-radius: 20px;

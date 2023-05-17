@@ -124,7 +124,6 @@ io.on('connect', socket => {
 
     socket.on('message', (msg, username, roomid) => {
 		msg=emoji.unemojify(msg, null);
-        //todo: add msg to db and then emojify again to show actual emoji in chat
 		msg=emoji.emojify(msg, null);
         io.to(roomid).emit('message', msg, username, moment().format(
             "h:mm a"

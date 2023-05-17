@@ -1506,15 +1506,17 @@ invIcon.addEventListener("click",(evt)=>{
     const code = (new URLSearchParams(window.location.search)).get('room');
     const text = document.createElement("p");
     text.innerHTML="Room code copied!";
-    invIcon.children[0].style.display="none"
-    evt.target.style.display='none'
+    invIcon.children[0].style.display="none";
+    evt.target.style.display='none';
+    invIcon.style.pointerEvents='none';
     evt.target.insertAdjacentElement("afterend",text);
-    navigator.clipboard.writeText(code)
+    navigator.clipboard.writeText(code);
 
     setTimeout(()=>{
-        evt.target.style.display='block'
-        invIcon.children[0].style.display="block"
-        evt.target.nextSibling.remove()
+        evt.target.style.display='block';
+        invIcon.style.pointerEvents='auto';
+        invIcon.children[0].style.display="block";
+        evt.target.nextSibling.remove();
     },3000)
 });
 
