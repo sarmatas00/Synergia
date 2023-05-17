@@ -1396,12 +1396,13 @@ function addGroup(group){
 };
 
 /*Enter group chat event.  Finds all the other available group chats and 
-prohibits the user from entering another in the same time. Then it sends the particular group chat
-info to the server
+prohibits the user from entering another in the same time, as well as the "create group button".
+Then it sends the particular group chat info to the server
 */
 function groupChatEvent(evt){
     const groupEnterBtns = document.querySelectorAll('.groupEnterBtn');
     [...groupEnterBtns].forEach(btn=>btn.disabled=true);
+    document.querySelector('#groupBtn').disabled=true;
     socket.emit('messageGroupChat',{id:evt.target.id})
 }
 
@@ -1436,6 +1437,7 @@ socket.on('notifyUserGroup',(info)=>{
                 messageList.style.display='block';
                 const groupEnterBtns = document.querySelectorAll('.groupEnterBtn');
                 [...groupEnterBtns].forEach(btn=>btn.disabled=false);
+                document.querySelector('#groupBtn').disabled=false;
                 evt.target.remove();
                 document.querySelector('.delGroupBtn').remove();
 
