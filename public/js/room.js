@@ -1702,4 +1702,16 @@ socket.on("warn speaking",(speakingMuch)=>{
     },3000)
 })
 
+/*Statictics screen display when option in settings is clicked.
+A box appears in the center of the screen, where information regarding total speaking
+time of users in the room, as well as emotions are displayed. This info is refreshed every
+10 minutes. */
+const statBtn = document.querySelector("a[href='stats']");
+const statScreen = document.querySelector(".statisticsScreen");
+statBtn.addEventListener("click",(evt)=>{
+    evt.preventDefault();
+    statScreen.style.opacity='100';
+    
+})
+
 
