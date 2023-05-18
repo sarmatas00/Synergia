@@ -1415,7 +1415,8 @@ socket.on('notifyUserGroup',(info)=>{
              groupMessageList.id=`${Group}`;
              messageList.insertAdjacentElement('afterend',groupMessageList);
             groupMessageList.style.display='block';
- 
+            document.querySelector('#send-location').disabled=document.querySelector('#send-file').disabled=true;
+
 
             const closeGroupBtn = document.createElement('btn')
             closeGroupBtn.classList.add('btn','btn-success','closeGroupBtn');
@@ -1426,9 +1427,10 @@ socket.on('notifyUserGroup',(info)=>{
                 messageList.style.display='block';
                 const groupEnterBtns = document.querySelectorAll('.groupEnterBtn');
                 [...groupEnterBtns].forEach(btn=>btn.disabled=false);
-                document.querySelector('#groupBtn').disabled=false;
+                document.querySelector('#groupBtn').disabled=false; 
                 evt.target.remove();
                 (document.querySelector('.delGroupBtn'))?document.querySelector('.delGroupBtn').remove():null;
+                document.querySelector('#send-location').disabled=document.querySelector('#send-file').disabled=false;
 
             })
 
