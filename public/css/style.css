@@ -1357,6 +1357,10 @@ ul.primary li:hover > a{
   height: 100%;
   border-right: 1px solid black;
 }
+.statisticsScreen .statContent .totalTime .totalTimeList li{
+  float: left;
+  margin: 0.5em;
+}
 .statisticsScreen .statContent .reactions{
   width: 50%;
   height: 100%;

@@ -1787,7 +1787,7 @@ syncChat.addEventListener('click',async (evt)=>{
 /*displays a modal on the user's screen that has contributed to the conversation a lot or very little
 the last 10 minutes. The modal goes away after 3 sec */
 socket.on("warn speaking",(speakingMuch)=>{
-    console.log(speakingMuch);
+    
     const modal = document.querySelector('#speakingModal');
     (speakingMuch)?modal.children[0].children[0].innerText="Μονωπολεις στη συζητηση":modal.children[0].children[0].innerText="Εισαι ανενεργος στη συζητηση";
     modal.style.display="block";
@@ -1799,13 +1799,38 @@ socket.on("warn speaking",(speakingMuch)=>{
 /*Statictics screen display when option in settings is clicked.
 A box appears in the center of the screen, where information regarding total speaking
 time of users in the room, as well as emotions are displayed. This info is refreshed every
-10 minutes. */
+time a user stops speaking, or when he clicks the button to view the info */
 const statBtn = document.querySelector("a[href='stats']");
 const statScreen = document.querySelector(".statisticsScreen");
+const timeStat = document.querySelector(".totalTimeList");
 statBtn.addEventListener("click",(evt)=>{
     evt.preventDefault();
     statScreen.style.opacity='100';
+
+    socket.emit("get statistics",roomid);
     
+})
+
+/*get total speaking time for every user from server.
+For every user check if their name already appears on the panel and make new <li> with their stats if not
+Extract the number of seconds from the <li> and update it to the new time value if the stat is already on the panel */
+
+socket.on("get statistics",async (time)=>{
+    const totalTime= await time;
+    if (totalTime){
+        totalTime.forEach((user)=>{
+            const exists=document.querySelector(`#${user.username}`);
+            if(exists){
+                const seconds = exists.innerHTML.match(/\d+ seconds/g).join("");
+                (seconds.match(/\d/g).join("")<user.total)?exists.innerHTML=`${user.username} --> ${user.total} seconds (${(user.total/60).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`:null;
+            }else{
+                const newListStat = document.createElement("li");
+                newListStat.setAttribute("id",`${user.username}`);
+                newListStat.innerHTML=`${user.username} --> ${user.total} seconds (${(user.total/60).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`;
+                timeStat.appendChild(newListStat);
+            }
+        })
+    }
 })
 
 

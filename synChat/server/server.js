@@ -352,7 +352,7 @@ io.on('connection', (socket) => {
         /*filter out the disconnecting user from any groups he participates
         if he is the last member of any of these groups, also delete the group
         this happens 2 sec after he exits the room, which reverts the changes in case the member just refreshed the page */
-        if(groups){
+        if(groups && user){
             restartGroup[user.name]=[];
             Object.keys(groups).forEach((group)=>{
                 restartGroup[user.name].push(setTimeout(()=>{

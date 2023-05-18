@@ -577,6 +577,18 @@ ol li{
 #groups .groupList li button{
     width: max-content;
 }
+#groups .groupList li span{
+    background: red;
+    width: 2em;
+    height: 2em;
+    position: relative;
+    left: 10em;
+    bottom: 2em;
+    border-radius: 50%;
+    text-align: center;
+    padding: 0.3em;
+    font-size: 1.3em;
+}
 
 .closeGroupBtn{
     position: absolute;

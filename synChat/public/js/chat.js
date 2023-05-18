@@ -4,6 +4,7 @@ var cnuser=[];
 var cntusr = 0;
 var presenceusr = "";
 var user_list = [];
+var groupMsgUnread={};
 
 function scrollToBottom(id) {
     // Selectors
@@ -363,32 +364,7 @@ socket.on('updateUserList', function(users,groups) {
 		
         list.append(button);
 		list.append(label);
-		/*
-		let usr = document.getElementById('users')
-		var stat = document.createElement('h2');
-		stat.innerHTML = "<h2 class='status' > Hello" + "</h2>";
-		usr.appendChild(stat);
-		list.append(stat);
-		 
 		
-        list.append(label);
-		//list.append("<h1 class='status' >");
-		//list.append("Hello");
-		//list.append("</h1");
-		//let online = navigator.onLine;
-		
-		/*
-		list.append("<div class='offline-msg'>");
-		list.append("You're offline 😢 ");
-		list.append("</div>");
-		list.append("<div class='online-msg'>");
-        list.append("You're connected 🔗");
-		list.append("</div>");
-		*/
-		//list.append("user active:" + online);
-		
-		
-		//document.getElementById("status").innerHTML = "user online: " + online;
 
         
         //Check that the user leave without notifying when you two are in calls.
@@ -1335,8 +1311,15 @@ document.querySelector('.makeGroup').addEventListener('click',(evt)=>{
     evt.preventDefault();
     const nameInput = document.getElementById('groupName');
     const sameGroupName = [...document.querySelectorAll('.groupNameLabel')].some((name)=>name.innerText.replace('Group','').trim()==nameInput.value);           //returs true if a group with the same name already exists in that room
-    if(nameInput.value==="" || sameGroupName){             
-        nameInput.style.border='3px solid red'
+    if(nameInput.value===""){             
+        nameInput.style.border='3px solid red';
+         alert("Το όνομα του group δεν μπορεί να είναι κενό.")   
+    }else if(sameGroupName){
+        nameInput.style.border='3px solid red';
+        alert("Υπάρχει ήδη group με αυτό το όνομα.")   
+    }else if((/^\d$/.test(nameInput.value[0]))){
+        nameInput.style.border='3px solid red';
+        alert("Το όνομα του group δεν μπορεί να αρχίζει με αριθμό.")   
     }else{
         const formData = new FormData(groupForm);
         let names = [];
@@ -1378,13 +1361,16 @@ socket.on('add group',(group)=>{
  */
 function addGroup(group){
     const newGroup = document.createElement('li');
-    groups.append(newGroup);
+    groups.append(newGroup); 
 
     const button = document.createElement('button');
     button.innerHTML = 'Enter';
     button.classList.add('btn', 'btn-success','groupEnterBtn');
     button.id=`${group.name}-${group.room}`.split(' ').join('');                          //group id
     button.addEventListener('click',groupChatEvent);
+    if(document.querySelector(`#${group.name}`)){                                       //ensures all group enter buttons are disabled if some other user
+        button.disabled=true;                                                           //has exited or entered the room and this user has a group chat open
+    }
     const label = document.createElement('div');
 
 
@@ -1393,6 +1379,9 @@ function addGroup(group){
 
     newGroup.appendChild(label);
     newGroup.appendChild(button);
+
+    
+    groupMsgUnread[group.name]=0;                                                       //initiate unread messaged counter for every group
 };
 
 /*Enter group chat event.  Finds all the other available group chats and 
@@ -1426,7 +1415,8 @@ socket.on('notifyUserGroup',(info)=>{
              groupMessageList.id=`${Group}`;
              messageList.insertAdjacentElement('afterend',groupMessageList);
             groupMessageList.style.display='block';
- 
+            document.querySelector('#send-location').disabled=document.querySelector('#send-file').disabled=true;
+
 
             const closeGroupBtn = document.createElement('btn')
             closeGroupBtn.classList.add('btn','btn-success','closeGroupBtn');
@@ -1437,9 +1427,10 @@ socket.on('notifyUserGroup',(info)=>{
                 messageList.style.display='block';
                 const groupEnterBtns = document.querySelectorAll('.groupEnterBtn');
                 [...groupEnterBtns].forEach(btn=>btn.disabled=false);
-                document.querySelector('#groupBtn').disabled=false;
+                document.querySelector('#groupBtn').disabled=false; 
                 evt.target.remove();
-                document.querySelector('.delGroupBtn').remove();
+                (document.querySelector('.delGroupBtn'))?document.querySelector('.delGroupBtn').remove():null;
+                document.querySelector('#send-location').disabled=document.querySelector('#send-file').disabled=false;
 
             })
 
@@ -1474,6 +1465,7 @@ socket.on('notifyUserGroup',(info)=>{
                 messageList.style.display='none';
         
             })
+            groupMsgUnread[Group]=groupMsg.length;                                  //all messages have been read
             
         }else{
             message=groupMsg[groupMsg.length-1];
@@ -1488,12 +1480,32 @@ socket.on('notifyUserGroup',(info)=>{
                 if(html.trim()!==groupMessageList.children[groupMessageList.childElementCount-1].outerHTML.trim()){
                     groupMessageList.innerHTML+=html;
                 }
+            groupMsgUnread[Group]++;                                                
+        }   
+        if(document.querySelector(`#${Group}-unread`)){                                 //unread messages notification dissapears when user enters the group chat
+            document.querySelector(`#${Group}-unread`).style.display='none';
         }
+
         
         
         
         
         scrollToBottom(`#${Group}`);
+    /*if the user has closed the group chat and some other user sends a message in the chat, enable and update unread messaged notification counter
+    and create it if it does not already exist */
+    }else if(groupUsers.includes(currentusr) && activateGroupBtn!==null && document.querySelector(`#${Group}`)===null){
+        if(groupMsg.length-groupMsgUnread[Group]>0){
+            if(document.querySelector(`#${Group}-unread`)){
+                document.querySelector(`#${Group}-unread`).style.display='inline';
+                document.querySelector(`#${Group}-unread`).innerHTML=groupMsg.length-groupMsgUnread[Group];
+            }else{
+                const newMessagesNotification = document.createElement("span");
+                newMessagesNotification.innerHTML=groupMsg.length-groupMsgUnread[Group];
+                newMessagesNotification.setAttribute("id",`${Group}-unread`);
+                activateGroupBtn.parentElement.appendChild(newMessagesNotification);
+            }
+        }
+        
     }
 
 })
