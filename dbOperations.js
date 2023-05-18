@@ -43,5 +43,15 @@ async function getMessages(room){
     
 }
 
+function saveEmojis(room,detection){
+   console.log("doing db things");
+   
+    for(sid in detection){
+        for(emotion in detection[sid]){
+            operator.set(operator.ref(db,`emojis/${room}/${sid}/${emotion}`),detection[sid][emotion]);
+        }
+    }
+}
 
-module.exports = {storeMessage,archiveChatroom,getMessages}
+
+module.exports = {storeMessage,archiveChatroom,getMessages,saveEmojis}

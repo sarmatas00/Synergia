@@ -604,8 +604,8 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
             name.innerHTML = `${cName[sid]}`;
 			teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> `+ '<br>';
 			//emo.classList.add('nametag');
-            emo.innerHTML = ` <img id=\"emo${sid}\" src=\"neutral.png\" width=\"50px\" height=\"50px\">`;
-			raiseh.innerHTML = " <img src=\"raisedhand.png\" width=\"50px\" height=\"50px\">";
+            emo.innerHTML = ` <img id=\"emo${sid}\" src=\"img/neutral.png\" width=\"50px\" height=\"50px\">`;
+			raiseh.innerHTML = " <img src=\"img/raisedhand.png\" width=\"50px\" height=\"50px\">";
             vidCont.id = sid;
             muteIcon.id = `mute${sid}`;
             videoOff.id = `vidoff${sid}`;
@@ -873,8 +873,8 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
 					teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> ` + '<br>';
 					
 					//emo.classList.add('nametag');
-					emo.innerHTML = ` <img id="emo${sid}" src=\"neutral.png\" width=\"50px\" height=\"50px\">`;
-					raiseh.innerHTML = " <img src=\"raisedhand.png\" width=\"50px\" height=\"50px\">";
+					emo.innerHTML = ` <img id="emo${sid}" src=\"img/neutral.png\" width=\"50px\" height=\"50px\">`;
+					raiseh.innerHTML = " <img src=\"img/raisedhand.png\" width=\"50px\" height=\"50px\">";
                     vidCont.id = sid;
                     muteIcon.id = `mute${sid}`;
                     videoOff.id = `vidoff${sid}`;
@@ -1444,16 +1444,16 @@ function emojiListener(){
         if(emoOn){
             console.log("emoji off");
             emoOn=false;
-            
+            startInterval(false);
             clearInterval(intervalID);
             intervalID=null;
 
             setTimeout(()=>{
                 for(let sid in connections){
-                    document.getElementById(`emo${sid}`).src="neutral.png";
+                    document.getElementById(`emo${sid}`).src="img/neutral.png";
                     console.log("neutralizing");
                 }
-                document.getElementById(`iml`).src="neutral.png";
+                document.getElementById(`iml`).src="img/neutral.png";
                 console.log("neutralized local");
 
             },1000)
@@ -1466,7 +1466,13 @@ function emojiListener(){
         else{
             emoOn=true;
             console.log("emoON")
-            turnOnEmojis();
+            var detection=turnOnEmojis();
+
+            //start tracking emotions
+            setTimeout(()=>{
+                startInterval(true,detection);
+            },1000)
+            
 
             
         } 
@@ -1485,9 +1491,13 @@ function turnOnEmojis(){
     let video="";
     let sids="";
     let ctr=0;
+    var detection={};
     //For every connected user we track his video and output the according emoji to his icon
     for(let sid in connections){
     console.log("Ctr ",++ctr);
+    detection[sid]={};detection["loc"]={};
+    detection[sid]["surprised"]=0;detection[sid]["scared"]=0;detection[sid]["angry"]=0;detection[sid]["sad"]=0;detection[sid]["smile"]=0;detection[sid]["disgust"]=0;
+    detection["loc"]["surprised"]=0;detection["loc"]["scared"]=0;detection["loc"]["angry"]=0;detection["loc"]["sad"]=0;detection["loc"]["smile"]=0;detection["loc"]["disgust"]=0;
     if(!emojiSID.includes(sid)){
     emojiSID.push(sid);
     video=document.getElementById(`video${sid}`);
@@ -1539,17 +1549,30 @@ function turnOnEmojis(){
                             {
                                 case '2': source="img/neutral.png";
                                 break;
-                                case '3': source="img/smile.png";
+                                case '3': 
+                                    source="img/smile.png";
+                                    detection[sid]["smile"]++;
                                 break;
-                                case '4': source="img/sad.png";
+                                case '4': 
+                                    source="img/sad.png";
+                                    detection[sid]["sad"]++;
                                 break;
-                                case '5': source="img/angry.png";
+                                case '5': 
+                                    source="img/angry.png";
+                                    detection[sid]["angry"]
                                 break;
-                                case '6': source="img/scared.png";
+                                case '6': 
+                                    source="img/scared.png";
+                                    detection[sid]["scared"]++;
                                 break;
-                                case '7': source="img/disgust.png";
+                                case '7':
+                                     source="img/disgust.png";
+                                     detection[sid]["disgust"]++;
                                 break;
-                                case '8': source="img/surprised.png";
+                                
+                                case '8': 
+                                source="img/surprised.png";
+                                detection[sid]["surprised"]++;
                                 break;
                                 default: source="img/default.png";
                             }
@@ -1558,6 +1581,8 @@ function turnOnEmojis(){
                 //let emoLoc=document.getElementById("iml");
                 //emoLoc.src=source;
                 emoRem.src=source;
+                
+                
                 //faceR.innerHTML = statusIcons[status];
                 
                 
@@ -1609,19 +1634,33 @@ function turnOnEmojis(){
                             {
                                 case '2': source="img/neutral.png";
                                 break;
-                                case '3': source="img/smile.png";
+                                case '3': 
+                                    source="img/smile.png";
+                                    detection["loc"]["smile"]++;
                                 break;
-                                case '4': source="img/sad.png";
+                                case '4': 
+                                    source="img/sad.png";
+                                    detection["loc"]["sad"]++;
                                 break;
-                                case '5': source="img/angry.png";
+                                case '5': 
+                                    source="img/angry.png";
+                                    detection["loc"]["angry"]++;
                                 break;
-                                case '6': source="img/scared.png";
+                                case '6': 
+                                    source="img/scared.png";
+                                    detection["loc"]["scared"]++;
                                 break;
-                                case '7': source="img/disgust.png";
+                                case '7':
+                                     source="img/disgust.png";
+                                     detection["loc"]["disgust"]++;
                                 break;
-                                case '8': source="img/surprised.png";
+                                
+                                case '8': 
+                                source="img/surprised.png";
+                                detection["loc"]["surprised"]++;
                                 break;
                                 default: source="img/default.png";
+                            
                             }
                 //alert("joined "+ status + " " + source);
                 //let emo=document.getElementById("iml");
@@ -1629,6 +1668,9 @@ function turnOnEmojis(){
                 //emoLoc.src=source;
                 let emoLoc=document.getElementById("iml");
                 emoLoc.src=source;
+                
+                
+                
                 //faceR.innerHTML = statusIcons[status];
                 
                 
@@ -1638,8 +1680,7 @@ function turnOnEmojis(){
                 console.log("No Faces")
                 //face.innerHTML = statusIcons.default;
             }		
-                
-            console.log("detection \n");   
+                  
         }
         //code for the case that the interval hasnt yet shut down after emoji display is toggled off
         else
@@ -1659,9 +1700,62 @@ function turnOnEmojis(){
     }
 
     console.log("length ",emojiSID.length);
+    return detection;
         
 }
 
+
+
+//testing code
+//every x seconds we track each users emotions and do something with them
+var detectionInterval;
+function startInterval(toggle,detection){
+//Emojis turned on for the first time or turned on again so detections of emotions are reset
+if(toggle){
+    for(let sid in connections){
+       detection[sid]["surprised"]=0;detection[sid]["smile"]=0;detection[sid]["angry"]=0;detection[sid]["scared"]=0;detection[sid]["disgust"]=0;detection[sid]["sad"]=0;
+    }
+    detection["loc"]["surprised"]=0;detection["loc"]["smile"]=0;detection["loc"]["angry"]=0;detection["loc"]["scared"]=0;detection["loc"]["disgust"]=0;detection["loc"]["sad"]=0;
+//every x seconds we track the users in the call emotions and do something with them
+detectionInterval=setInterval(()=>{
+    //use the info eg every 3000ms there are 20 detections
+    for(let sid in connections){
+        let emotionMajority="";let count=0;let localEmotion="";let localCount=0;
+        for(const emotion in detection[sid]){
+            console.log(`object ${emotion}: ${detection[sid][emotion]}`);
+            if(detection[sid][emotion]>count){
+                emotionMajority=emotion;
+                count=detection[sid][emotion];
+            }
+            if(detection["loc"][emotion]>localCount){
+                localEmotion=emotion;
+                localCount=detection["loc"][emotion];
+            }
+        }
+        console.log(`${sid} has been feeling mostly ${emotionMajority} with a count of ${count}/20`);
+        console.log(`local has been feeling mostly ${localEmotion} with a count of ${localCount}/20`);
+        socket.emit('saveEmojis',detection,roomid);
+        
+    }
+
+
+
+
+
+    //every interval emotions are reset and loged to database  
+    for(let sid in connections){
+        detection[sid]["surprised"]=0;detection[sid]["smile"]=0;detection[sid]["angry"]=0;detection[sid]["scared"]=0;detection[sid]["disgust"]=0;detection[sid]["sad"]=0;
+     }
+     detection["loc"]["surprised"]=0;detection["loc"]["smile"]=0;detection["loc"]["angry"]=0;detection["loc"]["scared"]=0;detection["loc"]["disgust"]=0;detection["loc"]["sad"]=0;
+    
+},3000)
+}else{
+    if(detectionInterval){
+        clearInterval(detectionInterval);
+    }
+}
+
+}
 
 
 //every time a user speaks and stops speaking send a notice to other users

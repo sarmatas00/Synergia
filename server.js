@@ -172,6 +172,10 @@ io.on('connect', socket => {
         //toDo: push socket.id out of rooms
     });
 
+    socket.on('saveEmojis',(detection,roomid)=>{
+        db.saveEmojis(roomid,detection);
+    })
+
     //when room gets created, store new document data to emit to other users
     socket.on('store-doc',(docData)=>{
         const {doc,type,provider,roomid}=docData;
@@ -224,6 +228,8 @@ io.on('connect', socket => {
     
     
 })
+
+
 
 
 server.listen(PORT, () => console.log(`Server is up and running on port ${PORT}`));
