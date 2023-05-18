@@ -129,20 +129,18 @@ async function getSpeakingTime(room,username){
     return null;
 }
 
-
-
-
-
-module.exports = {getSpeakingTime,storeSpeakingTime,updateSpeakingTime,storeMessage,storeGroupMessage,archiveChatroom,getMessages,getGroupMessages,archiveGroupChatroom}
 function saveEmojis(room,detection){
-   console.log("doing db things");
-   
-    for(sid in detection){
-        for(emotion in detection[sid]){
-            operator.set(operator.ref(db,`emojis/${room}/${sid}/${emotion}`),detection[sid][emotion]);
-        }
-    }
-}
+    console.log("doing db things");
+    
+     for(sid in detection){
+         for(emotion in detection[sid]){
+             operator.set(operator.ref(db,`emojis/${room}/${sid}/${emotion}`),detection[sid][emotion]);
+         }
+     }
+ }
 
 
-module.exports = {storeMessage,archiveChatroom,getMessages,saveEmojis}
+
+module.exports = {getSpeakingTime,storeSpeakingTime,updateSpeakingTime,storeMessage,storeGroupMessage,archiveChatroom,getMessages,getGroupMessages,archiveGroupChatroom,saveEmojis}
+
+
