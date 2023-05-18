@@ -597,7 +597,7 @@ navbar .logo {
   margin: 0 auto;
   display: flex;
   margin-top: 30px;
-  width: 550px;
+  width: fit-content;
   background-color: #ffffff;
   border-radius: 10px;
   padding: 10px;
@@ -841,6 +841,33 @@ navbar .logo {
 .container-room .left-cont .footer .copycode-cont .copycode-button:focus {
   outline: none;
 }
+
+.container-room .left-cont #speakingModal {
+  display: none; 
+  position: fixed; 
+  z-index: 1;  
+  right: 3em;
+  bottom: 8em;
+  width: 30%; 
+  height: 7%; 
+  overflow: auto; 
+  
+}
+
+.container-room .left-cont #speakingModal .content {
+  background-color: aqua;
+  padding: 20px;
+  border: 2px solid #888;
+  width: 100%; 
+  height: 100%;
+  text-align: center;
+}
+
+.container-room .left-cont #speakingModal .content p{
+    font-size: large;
+
+}
+
 .container-room .right-cont {
   width: 30%;
   background-color: #ffffff;
@@ -1271,6 +1298,70 @@ ul.primary li:hover a {
 ul.primary li:hover > a{
   color: #000;
 } 
+
+.synChat{
+  position: absolute;
+  right: 5em;
+  top: 2em;
+}
+.synChat a{
+  color: white;
+  background-color: #4ecca3;
+  border: 2px solid #4ecca3;
+  border-radius: 20px;
+  padding: 10px;
+}
+.synChat a:hover{
+  color: #4ecca3;
+  background-color:white ;
+}
+
+.statisticsScreen{
+  background-color: white;
+  width: 50vw;
+  height: 50vh;
+  bottom: 25%;
+  left: 25%;
+  position: fixed;
+  border: 4px solid black;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* opacity: 0; */
+}
+
+.statisticsScreen .headers{
+  width: 100%;
+  height: 15%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.statisticsScreen .statContent{
+  width: 100%;
+  height: 85%;
+  display: flex;
+
+}
+.statisticsScreen hr{
+  width: 100%;
+  
+}
+.statisticsScreen .headers h3{
+  display: inline;
+  margin-right: 2em;
+}
+.statisticsScreen .statContent .totalTime{
+  width: 50%;
+  height: 100%;
+  border-right: 1px solid black;
+}
+.statisticsScreen .statContent .reactions{
+  width: 50%;
+  height: 100%;
+}
+
 
 @media only screen and (max-width: 200px) {
   .decor {

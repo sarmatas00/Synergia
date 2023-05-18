@@ -392,7 +392,7 @@ inviteButt.addEventListener('click', () => {
 	
     
     document.getElementById('room').style.display = "block";
-    
+    CopyClassText();
 
 })
 
@@ -1782,6 +1782,30 @@ syncChat.addEventListener('click',async (evt)=>{
     evt.preventDefault();
     await fetch('/start-chat-server');
     window.open('http://localhost:3001','_blank');
+})
+
+/*displays a modal on the user's screen that has contributed to the conversation a lot or very little
+the last 10 minutes. The modal goes away after 3 sec */
+socket.on("warn speaking",(speakingMuch)=>{
+    console.log(speakingMuch);
+    const modal = document.querySelector('#speakingModal');
+    (speakingMuch)?modal.children[0].children[0].innerText="Μονωπολεις στη συζητηση":modal.children[0].children[0].innerText="Εισαι ανενεργος στη συζητηση";
+    modal.style.display="block";
+    setTimeout(()=>{
+        modal.style.display='none';
+    },3000)
+})
+
+/*Statictics screen display when option in settings is clicked.
+A box appears in the center of the screen, where information regarding total speaking
+time of users in the room, as well as emotions are displayed. This info is refreshed every
+10 minutes. */
+const statBtn = document.querySelector("a[href='stats']");
+const statScreen = document.querySelector(".statisticsScreen");
+statBtn.addEventListener("click",(evt)=>{
+    evt.preventDefault();
+    statScreen.style.opacity='100';
+    
 })
 
 

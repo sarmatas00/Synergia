@@ -110,3 +110,14 @@ mic.addEventListener('click', () => {
         micAllowed = 1;
     }
 })
+
+
+//when user wants to enter synChat, make a request to the
+//server to run the synChat server and then open the app
+//on a new tab and navigate the user there
+const synChat=document.querySelector('[href="chat-link"]')
+synChat.addEventListener('click',async (evt)=>{
+    evt.preventDefault();
+    await fetch('/start-chat-server');
+    window.open('http://localhost:3001','_blank');
+})

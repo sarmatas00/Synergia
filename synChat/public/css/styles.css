@@ -172,6 +172,21 @@ ol li{
 .chat__footer #message-form .ci-cont{
     display: flex;
 }
+.chat__footer #message-form button{
+    border-radius: 40px;
+}
+.chat__footer #message-form> button{
+   border-radius: 50%;
+    margin: 4px 6px;
+    padding: 8px;
+    text-align: center;
+}
+.chat__footer #message-form> button:hover{
+   background-color: #e6eaee !important;
+}
+.fg-emoji-container{
+    transform: translateY(-70px);
+}
 
 .message {
     padding: 10px
@@ -566,13 +581,62 @@ ol li{
 .closeGroupBtn{
     position: absolute;
     top: 2em;
-    right: 20%;
+    right: 15em;
     width: max-content;
     font-size: 2em;
     border-radius: 20px;
     background-color: white;
     color:#41a700 ;
 }
+
+.delGroupBtn{
+    position: absolute;
+    top: 2em;
+    right: 7em;
+    width: max-content;
+    font-size: 2em;
+    border-radius: 20px;
+    background-color: red;
+    color:white ;
+}
+.delGroupBtn:hover{
+    
+    background-color: white;
+    color:red ;
+}
+
+  
+  .invite-icon{
+    background-color: #e6eaee;
+    text-align: center;
+    /* margin-left: 10px; */
+    color: #393e46;
+    padding: 30px;
+    border-radius: 50%;
+    height: 3em;
+    width: 3em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    transition: color 0.3s;
+    
+}
+.tooltip{
+    right: 4em;
+    top: 2em;
+    opacity: 100;
+}
+.tooltip .tooltiptext{
+      font-size: 1.2em;
+    
+  }
+  .invite-icon:hover {
+    cursor: pointer;
+    color: white;
+    background-color: #393e46;
+  }
 
   
 
