@@ -126,7 +126,7 @@ async function getSpeakingTime(room,username){
     } catch (error) {
         console.log(error);
     }
-    return null;
+    return {time:0};
 }
 
 
