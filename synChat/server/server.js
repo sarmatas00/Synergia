@@ -98,11 +98,11 @@ io.on('connection', (socket) => {
 
     socket.on('createMessage',async (message, callback) => {
         const user = users.getUser(socket.id);
-
+        
         //If user is the new message does not come from a group chat, emit back only the message
         if (user && isRealString(message.text) && !message.isGroupChat) {
             db.storeMessage(generateMessage(user.name, message.text),user.room);                //store each message in the room's mainChat db
-            io.to(user.room).emit('newMessage', generateMessage(user.name, message.text));
+            io.to(user.room).emit('newMessage', generateMessage(user.name, message.text)); 
         }else if(user && isRealString(message.text) && message.isGroupChat){                    //if is its a group chat message
             /*get all group messages for this room from db*/
             const groupMessages = await db.getGroupMessages(user.room,message.groupID);
@@ -161,7 +161,7 @@ io.on('connection', (socket) => {
         const user = users.getUser(socket.id);
 
         if (user) {
-            io.to(user.room).emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
+            socket.emit('newLocationMessage', generateLocationMessage(user.name, coords.latitude, coords.longitude));
         }
     });
     //This part is for uploading file
@@ -195,9 +195,9 @@ io.on('connection', (socket) => {
     });
     socket.on('newFileMessage',(fileInfo) =>{
         const user = users.getUser(socket.id);
-        console.log(user);
+        
         if (user) {
-            io.to(user.room).emit('newFileMessage', generateFiles(user.name, fileInfo.name));
+           socket.emit('newFileMessage', generateFiles(user.name, fileInfo.name));
         }
     });
     socket.on('newPrivateFileMessage',(info) =>{

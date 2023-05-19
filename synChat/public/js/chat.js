@@ -221,9 +221,19 @@ socket.on('newFileMessage', function(message) {
         url: message.fileurl,
         createdAt: formattedTime
     });
-
-    jQuery('#messages').append(html);
-    scrollToBottom('#messages');
+    var messageTextbox = jQuery('[name=message]');
+    const groupOpen = document.querySelector("#messages").nextElementSibling;               //next element of main chat, to check if user is currently in group chat mode
+    let isGroupChat;
+    (groupOpen.nodeName==='OL')?isGroupChat=true:isGroupChat=false;                         //if user is typing in a group
+    
+    //emit file info message to other users in the room/group
+    socket.emit('createMessage', {                                                      
+        text: html,
+        isGroupChat,
+        groupID:groupOpen.id
+    }, function() {
+        messageTextbox.val('')
+    });
     console.log('This is file url ' + message.fileurl);
 });
 
@@ -514,14 +524,18 @@ $('#myModal').modal({
     keyboard: true
 })
 socket.on('newMessage', function(message) {
-    var formattedTime = moment(message.createdAt).format('h:mm a');
-    var template = jQuery('#message-template').html();
-    var html = Mustache.render(template, {
-        text: message.text,
-        from: message.from,
-        createdAt: formattedTime
-    });
-
+    var html;
+    if(message.text.includes("<li") && message.text.includes("</li>")){             //if message is a file or location(already html form)
+        html=message.text;
+    }else{                                                                          //if message ir regular text message
+        var formattedTime = moment(message.createdAt).format('h:mm a');
+        var template = jQuery('#message-template').html();
+        html = Mustache.render(template, {
+            text: message.text,
+            from: message.from,
+            createdAt: formattedTime
+        });
+    }
     jQuery('#messages').append(html);
     scrollToBottom('#messages');
 	
@@ -622,6 +636,10 @@ socket.on('privateMessageSuccessfulAdd', function(message) {
 
 });
 socket.on('newLocationMessage', function(message) {
+    const groupOpen = document.querySelector("#messages").nextElementSibling;                 //next element of main chat, to check if user is currently in group chat mode
+    let isGroupChat;
+    (groupOpen.nodeName==='OL')?isGroupChat=true:isGroupChat=false;                           //if user is typing in a group
+
     var formattedTime = moment(message.createdAt).format('h:mm a');
     var template = jQuery('#location-message-template').html();
     var html = Mustache.render(template, {
@@ -630,8 +648,17 @@ socket.on('newLocationMessage', function(message) {
         createdAt: formattedTime
     });
 
-    jQuery('#messages').append(html);
-    scrollToBottom('#messages');
+    //emit location message to other users in room/group
+    socket.emit('createMessage', {                                                             
+        text: html,
+        isGroupChat,
+        groupID:groupOpen.id
+    }, function() {
+        messageTextbox.val('')
+    });
+
+    // jQuery('#messages').append(html);
+    // scrollToBottom('#messages');
 });
 
 
@@ -1415,7 +1442,6 @@ socket.on('notifyUserGroup',(info)=>{
              groupMessageList.id=`${Group}`;
              messageList.insertAdjacentElement('afterend',groupMessageList);
             groupMessageList.style.display='block';
-            document.querySelector('#send-location').disabled=document.querySelector('#send-file').disabled=true;
 
 
             const closeGroupBtn = document.createElement('btn')
@@ -1430,7 +1456,6 @@ socket.on('notifyUserGroup',(info)=>{
                 document.querySelector('#groupBtn').disabled=false; 
                 evt.target.remove();
                 (document.querySelector('.delGroupBtn'))?document.querySelector('.delGroupBtn').remove():null;
-                document.querySelector('#send-location').disabled=document.querySelector('#send-file').disabled=false;
 
             })
 
@@ -1454,13 +1479,18 @@ socket.on('notifyUserGroup',(info)=>{
         if(messageList.style.display!=='none'){
             groupMessageList.innerHTML+=`<h2>Group Chat: <span style='color:red;font-size:30px'>${Group}</span></h2`
             groupMsg.forEach((message)=>{
-                var formattedTime = moment(message.createdAt).format('h:mm a');
-                var template = jQuery('#message-template').html();
-                var html = Mustache.render(template, {
-                    text: message.text,
-                    from: message.from,
-                    createdAt: formattedTime
-                });
+                var html;
+                if(message.text.includes("<li") && message.text.includes("</li>")){                 //if message is file or location(already html form)
+                    html=message.text;
+                }else{                                                                              //if it is a regular text message
+                    var formattedTime = moment(message.createdAt).format('h:mm a');
+                    var template = jQuery('#message-template').html();
+                    html = Mustache.render(template, {
+                        text: message.text,
+                        from: message.from,
+                        createdAt: formattedTime
+                    });
+                }
                 groupMessageList.innerHTML+=html
                 messageList.style.display='none';
         
@@ -1469,17 +1499,22 @@ socket.on('notifyUserGroup',(info)=>{
             
         }else{
             message=groupMsg[groupMsg.length-1];
-            var formattedTime = moment(message.createdAt).format('h:mm a');
+            var html;
+            if(message.text.includes("<li") && message.text.includes("</li>")){                         //if message is file or location(already html form)
+                html=message.text;
+            }else{                                                                                      //if it is a regular text message
+                var formattedTime = moment(message.createdAt).format('h:mm a');
                 var template = jQuery('#message-template').html();
-                var html = Mustache.render(template, {
+                html = Mustache.render(template, {
                     text: message.text,
                     from: message.from,
                     createdAt: formattedTime
                 });
+            }
 
-                if(html.trim()!==groupMessageList.children[groupMessageList.childElementCount-1].outerHTML.trim()){
-                    groupMessageList.innerHTML+=html;
-                }
+            if(html.trim()!==groupMessageList.children[groupMessageList.childElementCount-1].outerHTML.trim()){
+                groupMessageList.innerHTML+=html;
+            }
             groupMsgUnread[Group]++;                                                
         }   
         if(document.querySelector(`#${Group}-unread`)){                                 //unread messages notification dissapears when user enters the group chat
