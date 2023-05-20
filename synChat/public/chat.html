@@ -175,6 +175,7 @@
             
 			<button>Send</button>
         </form>
+        <button id="openEditor">Text editor</button>
         <button id="send-location">Send location</button> &nbsp; &nbsp;
         <input type="file" id="input-file" style="display: none" accept="*/*">
         <button type="button" id="send-file" onclick="upload_file()">Send File</button>
@@ -253,6 +254,7 @@
 
 </script>
 
+
 <script src="/js/libs/socket.io-file-client.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <!-- jQuery library -->
@@ -263,7 +265,7 @@
 <script src="/js/libs/moment.js"></script>
 <script src="/js/libs/mustache.js"></script>
 <script src="/js/libs/deparam.js"></script>
-<script src="/js/chat.js"></script>
+<script src="/js/chat.js" type="module"></script>
 
 </body>
 

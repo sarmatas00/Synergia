@@ -5,6 +5,8 @@ var cntusr = 0;
 var presenceusr = "";
 var user_list = [];
 var groupMsgUnread={};
+import lexical from 'https://cdn.jsdelivr.net/npm/lexical@0.10.0/+esm'
+
 
 function scrollToBottom(id) {
     // Selectors
@@ -1569,6 +1571,24 @@ invIcon.addEventListener("click",(evt)=>{
     },3000)
 });
 
+const config = {
+    namespace:"MyEditor",
+    theme:{
+        ltr: 'ltr',
+        rtl: 'rtl',
+        placeholder: 'editor-placeholder',
+        paragraph: 'editor-paragraph',
+    },
+    onError:console.error
+};
+const lexicalEditor = lexical.createEditor(config);
 
+const startLecicalEditor = document.querySelector("#openEditor");
+startLecicalEditor.addEventListener("click",()=>{
+    const editorDiv = document.createElement("div");
+    editorDiv.setAttribute("contenteditable","true")
+    document.body.insertAdjacentElement("beforeend",editorDiv);
+    lexicalEditor.setRootElement(editorDiv);
+})
 
 
