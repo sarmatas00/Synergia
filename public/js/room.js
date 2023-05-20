@@ -2,6 +2,7 @@ import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.5.53/+esm'
 import {QuillBinding} from 'https://cdn.jsdelivr.net/npm/y-quill@0.1.5/+esm'
 import {SocketIOProvider} from 'https://cdn.jsdelivr.net/npm/y-socket.io@1.1.0/+esm'
 import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
+import lexical from 'https://cdn.jsdelivr.net/npm/lexical@0.10.0/+esm'
 
 const socket = io();
 const myvideo = document.querySelector("#vd1");
@@ -9,7 +10,7 @@ const roomid = params.get("room");
 let username;
 let sd = 1;
 
-let emoOn=false;
+let emoOn=false; 
 
 let docs={};    
 let editor={}                                     
@@ -1806,8 +1807,18 @@ const timeStat = document.querySelector(".totalTimeList");
 statBtn.addEventListener("click",(evt)=>{
     evt.preventDefault();
     statScreen.style.opacity='100';
+    document.querySelector('#leftcont').style.filter="blur(10px)";
 
     socket.emit("get statistics",roomid);
+    
+})
+
+
+const statsCloseBtn=document.querySelector('#stat-close')                //configure and style button that closes editor
+statsCloseBtn.innerHTML='<div class="nav-cancel is-active" id="nav-cancel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg></div>'
+statsCloseBtn.addEventListener("click",(evt)=>{
+    document.querySelector('#leftcont').style.filter="";
+    statScreen.style.opacity='0';
     
 })
 
@@ -1832,5 +1843,7 @@ socket.on("get statistics",async (time)=>{
         })
     }
 })
+
+
 
 
