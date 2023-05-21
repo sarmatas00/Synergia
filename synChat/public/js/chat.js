@@ -5,7 +5,9 @@ var cntusr = 0;
 var presenceusr = "";
 var user_list = [];
 var groupMsgUnread={};
-import lexical from 'https://cdn.jsdelivr.net/npm/lexical@0.10.0/+esm'
+var quillEditor={};
+import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
+
 
 
 function scrollToBottom(id) {
@@ -253,6 +255,11 @@ $('#private-send-file').on('change', function(event) {
     var fileEl = document.getElementById('private-send-file');
     uploader.upload(fileEl);
 });
+/*prevent form submission when clicking "send" button and trigger upload_file event */
+document.querySelector("#send-file").addEventListener("click",(evt)=>{          
+    evt.preventDefault();
+    upload_file()
+})
 //file upload client side end
 function upload_file() {
     $('#input-file').click();
@@ -420,6 +427,12 @@ socket.on('updateUserList', function(users,groups) {
             addGroup(groups[group]);
         }   
     }
+    
+    /*if user has a group chat open and this particular group has just been deleted by the owner,
+     trigger the return button to main screen to prevent errors */
+    if (document.querySelector("#messages").nextElementSibling.nodeName==="OL" && !Array.from(groups).includes(document.querySelector("#messages").nextElementSibling.id)){
+        document.querySelector(".closeGroupBtn").click()
+    }
 
 
 });
@@ -526,19 +539,26 @@ $('#myModal').modal({
     keyboard: true
 })
 socket.on('newMessage', function(message) {
-    var html;
-    if(message.text.includes("<li") && message.text.includes("</li>")){             //if message is a file or location(already html form)
+    var formattedTime = moment(message.createdAt).format('h:mm a');
+    var template = jQuery('#message-template').html();
+    var html = Mustache.render(template, {
+        text: message.text,
+        from: message.from,
+        createdAt: formattedTime
+    });
+    let flag=true;
+
+    if(message.text.includes("<li") && !message.text.includes("<ul>") && !message.text.includes("<ol>")){             //if message is a file or location(already html form)
+        flag=false;
         html=message.text;
-    }else{                                                                          //if message ir regular text message
-        var formattedTime = moment(message.createdAt).format('h:mm a');
-        var template = jQuery('#message-template').html();
-        html = Mustache.render(template, {
-            text: message.text,
-            from: message.from,
-            createdAt: formattedTime
-        });
     }
     jQuery('#messages').append(html);
+    
+    /*we check if message is in html form, which means that its coming from the editor and the flag indicates its not location or file
+    change the html to display the message correctly on the page, because editor messages are already in html form */
+    if(/<([A-Za-z][A-Za-z0-9]*)\b[^>]*>(.*?)<\/\1>/.test(message.text) && flag){            
+        document.querySelector("#messages").lastElementChild.children[1].innerHTML=message.text;
+    }
     scrollToBottom('#messages');
 	
 	
@@ -656,7 +676,6 @@ socket.on('newLocationMessage', function(message) {
         isGroupChat,
         groupID:groupOpen.id
     }, function() {
-        messageTextbox.val('')
     });
 
     // jQuery('#messages').append(html);
@@ -680,14 +699,29 @@ $('#private-message-form').on('submit', function(e) {
 
 jQuery('#message-form').on('submit', function(e) {
     e.preventDefault();
-
+    const textEditor = document.querySelector("#editorParent")
+    textEditor.style.display='none';                                            //hide text editor after sending message
     var messageTextbox = jQuery('[name=message]');
+
+
+    let text="";
+    /*if quill editor has been initiated and there is some input there, it means that the user is typing their message in the editor
+    At this case we get the editor's content as html and then we clear the editor.
+    In other case, it means user is just typing a regular message on the textarea */
+    if(Object.keys(quillEditor).length && quillEditor.getLength()>1){
+        text=quillEditor.root.innerHTML;
+        console.log(text);
+        quillEditor.setText("");
+    }else{
+        text=messageTextbox.val();
+    }
+
 
     const isGroupChat = document.querySelector('#messages').style.display==='none'      //true if a group chat is open
     const groupID = document.querySelector('#messages').nextSibling.id;                 //undefined group id if user not on a group chat
     
     socket.emit('createMessage', {
-        text: messageTextbox.val(),
+        text,
         isGroupChat,
         groupID
     }, function() {
@@ -1481,41 +1515,54 @@ socket.on('notifyUserGroup',(info)=>{
         if(messageList.style.display!=='none'){
             groupMessageList.innerHTML+=`<h2>Group Chat: <span style='color:red;font-size:30px'>${Group}</span></h2`
             groupMsg.forEach((message)=>{
-                var html;
-                if(message.text.includes("<li") && message.text.includes("</li>")){                 //if message is file or location(already html form)
+                var formattedTime = moment(message.createdAt).format('h:mm a');
+                var template = jQuery('#message-template').html();
+                var html = Mustache.render(template, {
+                    text: message.text,
+                    from: message.from,
+                    createdAt: formattedTime
+                });
+                let flag=true;
+                if(message.text.includes("<li") && !message.text.includes("<ul>") && !message.text.includes("<ol>")){                 //if message is file or location(already html form)
+                    flag=false;
                     html=message.text;
-                }else{                                                                              //if it is a regular text message
-                    var formattedTime = moment(message.createdAt).format('h:mm a');
-                    var template = jQuery('#message-template').html();
-                    html = Mustache.render(template, {
-                        text: message.text,
-                        from: message.from,
-                        createdAt: formattedTime
-                    });
                 }
                 groupMessageList.innerHTML+=html
+
+                /*we check if message is in html form, which means that its coming from the editor and the flag indicates its not location or file.
+                Change the html to display the message correctly on the page, because editor messages are already in html form */
+                if(/<([A-Za-z][A-Za-z0-9]*)\b[^>]*>(.*?)<\/\1>/.test(message.text) && flag){            
+                    groupMessageList.lastElementChild.children[1].innerHTML=message.text;
+                }
+
                 messageList.style.display='none';
         
             })
             groupMsgUnread[Group]=groupMsg.length;                                  //all messages have been read
             
         }else{
-            message=groupMsg[groupMsg.length-1];
-            var html;
-            if(message.text.includes("<li") && message.text.includes("</li>")){                         //if message is file or location(already html form)
+            const message=groupMsg[groupMsg.length-1];
+            var formattedTime = moment(message.createdAt).format('h:mm a');
+            var template = jQuery('#message-template').html();
+            var html = Mustache.render(template, {
+                text: message.text,
+                from: message.from,
+                createdAt: formattedTime
+            });
+            let flag=true;
+            if(message.text.includes("<li") && !message.text.includes("<ul>") && !message.text.includes("<ol>")){                 //if message is file or location(already html form)
+                flag=false;
                 html=message.text;
-            }else{                                                                                      //if it is a regular text message
-                var formattedTime = moment(message.createdAt).format('h:mm a');
-                var template = jQuery('#message-template').html();
-                html = Mustache.render(template, {
-                    text: message.text,
-                    from: message.from,
-                    createdAt: formattedTime
-                });
             }
 
             if(html.trim()!==groupMessageList.children[groupMessageList.childElementCount-1].outerHTML.trim()){
                 groupMessageList.innerHTML+=html;
+
+                /*we check if message is in html form, which means that its coming from the editor and the flag indicates its not location or file
+                change the html to display the message correctly on the page, because editor messages are already in html form */
+                if(/<([A-Za-z][A-Za-z0-9]*)\b[^>]*>(.*?)<\/\1>/.test(message.text) && flag){            //if message is a file or location(already html form)
+                    groupMessageList.lastElementChild.children[1].innerHTML=message.text;
+                }
             }
             groupMsgUnread[Group]++;                                                
         }   
@@ -1523,8 +1570,6 @@ socket.on('notifyUserGroup',(info)=>{
             document.querySelector(`#${Group}-unread`).style.display='none';
         }
 
-        
-        
         
         
         scrollToBottom(`#${Group}`);
@@ -1571,24 +1616,70 @@ invIcon.addEventListener("click",(evt)=>{
     },3000)
 });
 
-const config = {
-    namespace:"MyEditor",
-    theme:{
-        ltr: 'ltr',
-        rtl: 'rtl',
-        placeholder: 'editor-placeholder',
-        paragraph: 'editor-paragraph',
-    },
-    onError:console.error
-};
-const lexicalEditor = lexical.createEditor(config);
 
-const startLecicalEditor = document.querySelector("#openEditor");
-startLecicalEditor.addEventListener("click",()=>{
-    const editorDiv = document.createElement("div");
-    editorDiv.setAttribute("contenteditable","true")
-    document.body.insertAdjacentElement("beforeend",editorDiv);
-    lexicalEditor.setRootElement(editorDiv);
+
+const startQuillEditor = document.querySelector("#openEditor");
+const textEditor = document.querySelector("#editorParent")
+
+/*when user clicks the "text editor" button, we prevent form submission and check if the editor toolbar exists already in the dom
+If yes, it means that editor has already been created and with every click we toggle its visibility
+If not, we call the function to initialize the editor */
+startQuillEditor.addEventListener("click",(evt)=>{
+    evt.preventDefault();
+    if(document.querySelector(".ql-toolbar")){
+        (textEditor.style.display==="block")?textEditor.style.display="none":textEditor.style.display="block";
+    }else{
+        loadQuillEditor();
+    }
 })
 
+/*Quill editor initialization */
+function loadQuillEditor(){
 
+    Quill.register('modules/cursors', QuillCursors)       //cursors for different users when editing
+    const toolbarOptions = [
+        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+        ['blockquote', 'code-block'],
+        [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+        [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+        [{ 'direction': 'rtl' }],                         // text direction
+        // array for drop-downs, empty array = defaults
+        [{ 'size': [] }],
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+        [{ 'font': [] }],
+        [{ 'align': [] }],
+        ['image', 'video'], 
+        ['clean'],                                         
+      ];
+    
+    quillEditor=new Quill('#editor',{                   //editor setup
+        theme:'snow',
+        modules:{
+            cursors:true,
+            toolbar:toolbarOptions
+        }
+    })
+    
+    fitToParent(textEditor.children[0],100,10)           //editor toolbar takes 10vh and 100% width of the editor container
+    fitToParent(textEditor.children[1],100,50)          //editor main area takes 50vh and 100% width of the editor container
+
+    /*editor close button, which hides the editor from the screen when clicked
+    Button's innerHTML is modified to represent an 'X'  */
+    const textEditorCloseBtn=document.querySelector('#ql-close')                //configure and style button that closes editor
+    textEditorCloseBtn.innerHTML='<div class="nav-cancel is-active" id="nav-cancel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg></div>'
+    textEditorCloseBtn.addEventListener('click',()=>{textEditor.style.display="none"})
+
+}
+
+/*
+  This function adjusts the dimensions of a Quill editor element to fit its parent container.
+*/
+function fitToParent(element,width,height) {            
+    element.style.width = `${width}%`;
+    element.style.height = `${height}vh`;
+    element.width = element.offsetWidth;
+    element.height = element.offsetHeight;
+}
