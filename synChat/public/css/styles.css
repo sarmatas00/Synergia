@@ -649,6 +649,65 @@ ol li{
     color: white;
     background-color: #393e46;
   }
+  .ltr {
+    text-align: left;
+  }
+  
+  .rtl {
+    text-align: right;
+  }
+  
+  .editor-placeholder {
+    color: #999;
+    overflow: hidden;
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    user-select: none;
+    pointer-events: none;
+  }
+  
+  .editor-paragraph {
+    margin: 0 0 15px 0;
+    position: relative;
+  }
 
+  #editorParent{
+    width: 70vw;
+    height: 60vh;
+    position: fixed;
+    bottom: 7em;
+    left: 23em;
+    border: 1px solid black;
+    display: none;
+    background-color: beige;
+  }
+
+  #editorParent .ql-toolbar{
+    background-color: white;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+   #editorParent #ql-close{
+    float: right;
+    position: relative;
+    bottom: 92%;
+    right: 1%;
+    border: 1px solid #4ecca3;
+    border-radius: 50%;
+    padding: 10px;
+    text-align: center;
+    background: white;
+  
+  }
+   #editorParent #ql-close:hover{
+    cursor: pointer;
+    background:#4ecca3;
+    transform: scaleZ(5%);
+  }
   
 

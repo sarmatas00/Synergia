@@ -2,7 +2,6 @@ import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.5.53/+esm'
 import {QuillBinding} from 'https://cdn.jsdelivr.net/npm/y-quill@0.1.5/+esm'
 import {SocketIOProvider} from 'https://cdn.jsdelivr.net/npm/y-socket.io@1.1.0/+esm'
 import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
-import lexical from 'https://cdn.jsdelivr.net/npm/lexical@0.10.0/+esm'
 
 const socket = io();
 const myvideo = document.querySelector("#vd1");

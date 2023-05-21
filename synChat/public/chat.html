@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/css/animate.css" type="text/css" />
 	<link href="https://afeld.github.io/emoji-css/emoji.css" rel="stylesheet">
     <script src="https://kit.fontawesome.com/6510466b6c.js" crossorigin="anonymous"></script>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet" async defer>
 
     
 	<!-- UIkit JS -->
@@ -20,7 +21,7 @@
     <script src="https://cdn.jsdelivr.net/npm/uikit@3.9.4/dist/js/uikit-icons.min.js"></script>
 </head>
 
-<body class="chat">
+<body class="chat"> 
 <audio id="message-received" autoplay></audio>
 <div class="chat__sidebar" id="chat__sidebar" >
     <h3>Team Mates</h3>
@@ -175,11 +176,18 @@
             
 			<button>Send</button>
         </form>
+        <button id="openEditor">Text editor</button>
         <button id="send-location">Send location</button> &nbsp; &nbsp;
         <input type="file" id="input-file" style="display: none" accept="*/*">
-        <button type="button" id="send-file" onclick="upload_file()">Send File</button>
+        <button type="button" id="send-file">Send File</button>
         
     </div>
+</div>
+
+<div id="editorParent">
+    <div id="editor" height="1000" width="1000">
+    </div>
+    <button id="ql-close"></button>
 </div>
 
 <script>
@@ -253,6 +261,7 @@
 
 </script>
 
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 <script src="/js/libs/socket.io-file-client.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <!-- jQuery library -->
@@ -263,7 +272,7 @@
 <script src="/js/libs/moment.js"></script>
 <script src="/js/libs/mustache.js"></script>
 <script src="/js/libs/deparam.js"></script>
-<script src="/js/chat.js"></script>
+<script src="/js/chat.js" type="module"></script>
 
 </body>
 
