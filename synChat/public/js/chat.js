@@ -4,6 +4,11 @@ var cnuser=[];
 var cntusr = 0;
 var presenceusr = "";
 var user_list = [];
+var groupMsgUnread={};
+var quillEditor={};
+import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
+
+
 
 function scrollToBottom(id) {
     // Selectors
@@ -220,9 +225,19 @@ socket.on('newFileMessage', function(message) {
         url: message.fileurl,
         createdAt: formattedTime
     });
-
-    jQuery('#messages').append(html);
-    scrollToBottom('#messages');
+    var messageTextbox = jQuery('[name=message]');
+    const groupOpen = document.querySelector("#messages").nextElementSibling;               //next element of main chat, to check if user is currently in group chat mode
+    let isGroupChat;
+    (groupOpen.nodeName==='OL')?isGroupChat=true:isGroupChat=false;                         //if user is typing in a group
+    
+    //emit file info message to other users in the room/group
+    socket.emit('createMessage', {                                                      
+        text: html,
+        isGroupChat,
+        groupID:groupOpen.id
+    }, function() {
+        messageTextbox.val('')
+    });
     console.log('This is file url ' + message.fileurl);
 });
 
@@ -240,6 +255,11 @@ $('#private-send-file').on('change', function(event) {
     var fileEl = document.getElementById('private-send-file');
     uploader.upload(fileEl);
 });
+/*prevent form submission when clicking "send" button and trigger upload_file event */
+document.querySelector("#send-file").addEventListener("click",(evt)=>{          
+    evt.preventDefault();
+    upload_file()
+})
 //file upload client side end
 function upload_file() {
     $('#input-file').click();
@@ -363,32 +383,7 @@ socket.on('updateUserList', function(users,groups) {
 		
         list.append(button);
 		list.append(label);
-		/*
-		let usr = document.getElementById('users')
-		var stat = document.createElement('h2');
-		stat.innerHTML = "<h2 class='status' > Hello" + "</h2>";
-		usr.appendChild(stat);
-		list.append(stat);
-		 
 		
-        list.append(label);
-		//list.append("<h1 class='status' >");
-		//list.append("Hello");
-		//list.append("</h1");
-		//let online = navigator.onLine;
-		
-		/*
-		list.append("<div class='offline-msg'>");
-		list.append("You're offline 😢 ");
-		list.append("</div>");
-		list.append("<div class='online-msg'>");
-        list.append("You're connected 🔗");
-		list.append("</div>");
-		*/
-		//list.append("user active:" + online);
-		
-		
-		//document.getElementById("status").innerHTML = "user online: " + online;
 
         
         //Check that the user leave without notifying when you two are in calls.
@@ -431,6 +426,12 @@ socket.on('updateUserList', function(users,groups) {
         if(groups[group].users.includes(currentusr)){
             addGroup(groups[group]);
         }   
+    }
+    
+    /*if user has a group chat open and this particular group has just been deleted by the owner,
+     trigger the return button to main screen to prevent errors */
+    if (document.querySelector("#messages").nextElementSibling.nodeName==="OL" && !Array.from(groups).includes(document.querySelector("#messages").nextElementSibling.id)){
+        document.querySelector(".closeGroupBtn").click()
     }
 
 
@@ -545,8 +546,19 @@ socket.on('newMessage', function(message) {
         from: message.from,
         createdAt: formattedTime
     });
+    let flag=true;
 
+    if(message.text.includes("<li") && !message.text.includes("<ul>") && !message.text.includes("<ol>")){             //if message is a file or location(already html form)
+        flag=false;
+        html=message.text;
+    }
     jQuery('#messages').append(html);
+    
+    /*we check if message is in html form, which means that its coming from the editor and the flag indicates its not location or file
+    change the html to display the message correctly on the page, because editor messages are already in html form */
+    if(/<([A-Za-z][A-Za-z0-9]*)\b[^>]*>(.*?)<\/\1>/.test(message.text) && flag){            
+        document.querySelector("#messages").lastElementChild.children[1].innerHTML=message.text;
+    }
     scrollToBottom('#messages');
 	
 	
@@ -646,6 +658,10 @@ socket.on('privateMessageSuccessfulAdd', function(message) {
 
 });
 socket.on('newLocationMessage', function(message) {
+    const groupOpen = document.querySelector("#messages").nextElementSibling;                 //next element of main chat, to check if user is currently in group chat mode
+    let isGroupChat;
+    (groupOpen.nodeName==='OL')?isGroupChat=true:isGroupChat=false;                           //if user is typing in a group
+
     var formattedTime = moment(message.createdAt).format('h:mm a');
     var template = jQuery('#location-message-template').html();
     var html = Mustache.render(template, {
@@ -654,8 +670,16 @@ socket.on('newLocationMessage', function(message) {
         createdAt: formattedTime
     });
 
-    jQuery('#messages').append(html);
-    scrollToBottom('#messages');
+    //emit location message to other users in room/group
+    socket.emit('createMessage', {                                                             
+        text: html,
+        isGroupChat,
+        groupID:groupOpen.id
+    }, function() {
+    });
+
+    // jQuery('#messages').append(html);
+    // scrollToBottom('#messages');
 });
 
 
@@ -675,14 +699,29 @@ $('#private-message-form').on('submit', function(e) {
 
 jQuery('#message-form').on('submit', function(e) {
     e.preventDefault();
-
+    const textEditor = document.querySelector("#editorParent")
+    textEditor.style.display='none';                                            //hide text editor after sending message
     var messageTextbox = jQuery('[name=message]');
+
+
+    let text="";
+    /*if quill editor has been initiated and there is some input there, it means that the user is typing their message in the editor
+    At this case we get the editor's content as html and then we clear the editor.
+    In other case, it means user is just typing a regular message on the textarea */
+    if(Object.keys(quillEditor).length && quillEditor.getLength()>1){
+        text=quillEditor.root.innerHTML;
+        console.log(text);
+        quillEditor.setText("");
+    }else{
+        text=messageTextbox.val();
+    }
+
 
     const isGroupChat = document.querySelector('#messages').style.display==='none'      //true if a group chat is open
     const groupID = document.querySelector('#messages').nextSibling.id;                 //undefined group id if user not on a group chat
     
     socket.emit('createMessage', {
-        text: messageTextbox.val(),
+        text,
         isGroupChat,
         groupID
     }, function() {
@@ -1335,8 +1374,15 @@ document.querySelector('.makeGroup').addEventListener('click',(evt)=>{
     evt.preventDefault();
     const nameInput = document.getElementById('groupName');
     const sameGroupName = [...document.querySelectorAll('.groupNameLabel')].some((name)=>name.innerText.replace('Group','').trim()==nameInput.value);           //returs true if a group with the same name already exists in that room
-    if(nameInput.value==="" || sameGroupName){             
-        nameInput.style.border='3px solid red'
+    if(nameInput.value===""){             
+        nameInput.style.border='3px solid red';
+         alert("Το όνομα του group δεν μπορεί να είναι κενό.")   
+    }else if(sameGroupName){
+        nameInput.style.border='3px solid red';
+        alert("Υπάρχει ήδη group με αυτό το όνομα.")   
+    }else if((/^\d$/.test(nameInput.value[0]))){
+        nameInput.style.border='3px solid red';
+        alert("Το όνομα του group δεν μπορεί να αρχίζει με αριθμό.")   
     }else{
         const formData = new FormData(groupForm);
         let names = [];
@@ -1378,13 +1424,16 @@ socket.on('add group',(group)=>{
  */
 function addGroup(group){
     const newGroup = document.createElement('li');
-    groups.append(newGroup);
+    groups.append(newGroup); 
 
     const button = document.createElement('button');
     button.innerHTML = 'Enter';
     button.classList.add('btn', 'btn-success','groupEnterBtn');
     button.id=`${group.name}-${group.room}`.split(' ').join('');                          //group id
     button.addEventListener('click',groupChatEvent);
+    if(document.querySelector(`#${group.name}`)){                                       //ensures all group enter buttons are disabled if some other user
+        button.disabled=true;                                                           //has exited or entered the room and this user has a group chat open
+    }
     const label = document.createElement('div');
 
 
@@ -1393,6 +1442,9 @@ function addGroup(group){
 
     newGroup.appendChild(label);
     newGroup.appendChild(button);
+
+    
+    groupMsgUnread[group.name]=0;                                                       //initiate unread messaged counter for every group
 };
 
 /*Enter group chat event.  Finds all the other available group chats and 
@@ -1426,7 +1478,7 @@ socket.on('notifyUserGroup',(info)=>{
              groupMessageList.id=`${Group}`;
              messageList.insertAdjacentElement('afterend',groupMessageList);
             groupMessageList.style.display='block';
- 
+
 
             const closeGroupBtn = document.createElement('btn')
             closeGroupBtn.classList.add('btn','btn-success','closeGroupBtn');
@@ -1437,9 +1489,9 @@ socket.on('notifyUserGroup',(info)=>{
                 messageList.style.display='block';
                 const groupEnterBtns = document.querySelectorAll('.groupEnterBtn');
                 [...groupEnterBtns].forEach(btn=>btn.disabled=false);
-                document.querySelector('#groupBtn').disabled=false;
+                document.querySelector('#groupBtn').disabled=false; 
                 evt.target.remove();
-                document.querySelector('.delGroupBtn').remove();
+                (document.querySelector('.delGroupBtn'))?document.querySelector('.delGroupBtn').remove():null;
 
             })
 
@@ -1470,30 +1522,72 @@ socket.on('notifyUserGroup',(info)=>{
                     from: message.from,
                     createdAt: formattedTime
                 });
+                let flag=true;
+                if(message.text.includes("<li") && !message.text.includes("<ul>") && !message.text.includes("<ol>")){                 //if message is file or location(already html form)
+                    flag=false;
+                    html=message.text;
+                }
                 groupMessageList.innerHTML+=html
+
+                /*we check if message is in html form, which means that its coming from the editor and the flag indicates its not location or file.
+                Change the html to display the message correctly on the page, because editor messages are already in html form */
+                if(/<([A-Za-z][A-Za-z0-9]*)\b[^>]*>(.*?)<\/\1>/.test(message.text) && flag){            
+                    groupMessageList.lastElementChild.children[1].innerHTML=message.text;
+                }
+
                 messageList.style.display='none';
         
             })
+            groupMsgUnread[Group]=groupMsg.length;                                  //all messages have been read
             
         }else{
-            message=groupMsg[groupMsg.length-1];
+            const message=groupMsg[groupMsg.length-1];
             var formattedTime = moment(message.createdAt).format('h:mm a');
-                var template = jQuery('#message-template').html();
-                var html = Mustache.render(template, {
-                    text: message.text,
-                    from: message.from,
-                    createdAt: formattedTime
-                });
+            var template = jQuery('#message-template').html();
+            var html = Mustache.render(template, {
+                text: message.text,
+                from: message.from,
+                createdAt: formattedTime
+            });
+            let flag=true;
+            if(message.text.includes("<li") && !message.text.includes("<ul>") && !message.text.includes("<ol>")){                 //if message is file or location(already html form)
+                flag=false;
+                html=message.text;
+            }
 
-                if(html.trim()!==groupMessageList.children[groupMessageList.childElementCount-1].outerHTML.trim()){
-                    groupMessageList.innerHTML+=html;
+            if(html.trim()!==groupMessageList.children[groupMessageList.childElementCount-1].outerHTML.trim()){
+                groupMessageList.innerHTML+=html;
+
+                /*we check if message is in html form, which means that its coming from the editor and the flag indicates its not location or file
+                change the html to display the message correctly on the page, because editor messages are already in html form */
+                if(/<([A-Za-z][A-Za-z0-9]*)\b[^>]*>(.*?)<\/\1>/.test(message.text) && flag){            //if message is a file or location(already html form)
+                    groupMessageList.lastElementChild.children[1].innerHTML=message.text;
                 }
+            }
+            groupMsgUnread[Group]++;                                                
+        }   
+        if(document.querySelector(`#${Group}-unread`)){                                 //unread messages notification dissapears when user enters the group chat
+            document.querySelector(`#${Group}-unread`).style.display='none';
         }
-        
-        
+
         
         
         scrollToBottom(`#${Group}`);
+    /*if the user has closed the group chat and some other user sends a message in the chat, enable and update unread messaged notification counter
+    and create it if it does not already exist */
+    }else if(groupUsers.includes(currentusr) && activateGroupBtn!==null && document.querySelector(`#${Group}`)===null){
+        if(groupMsg.length-groupMsgUnread[Group]>0){
+            if(document.querySelector(`#${Group}-unread`)){
+                document.querySelector(`#${Group}-unread`).style.display='inline';
+                document.querySelector(`#${Group}-unread`).innerHTML=groupMsg.length-groupMsgUnread[Group];
+            }else{
+                const newMessagesNotification = document.createElement("span");
+                newMessagesNotification.innerHTML=groupMsg.length-groupMsgUnread[Group];
+                newMessagesNotification.setAttribute("id",`${Group}-unread`);
+                activateGroupBtn.parentElement.appendChild(newMessagesNotification);
+            }
+        }
+        
     }
 
 })
@@ -1524,4 +1618,68 @@ invIcon.addEventListener("click",(evt)=>{
 
 
 
+const startQuillEditor = document.querySelector("#openEditor");
+const textEditor = document.querySelector("#editorParent")
 
+/*when user clicks the "text editor" button, we prevent form submission and check if the editor toolbar exists already in the dom
+If yes, it means that editor has already been created and with every click we toggle its visibility
+If not, we call the function to initialize the editor */
+startQuillEditor.addEventListener("click",(evt)=>{
+    evt.preventDefault();
+    if(document.querySelector(".ql-toolbar")){
+        (textEditor.style.display==="block")?textEditor.style.display="none":textEditor.style.display="block";
+    }else{
+        loadQuillEditor();
+    }
+})
+
+/*Quill editor initialization */
+function loadQuillEditor(){
+
+    Quill.register('modules/cursors', QuillCursors)       //cursors for different users when editing
+    const toolbarOptions = [
+        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+        ['blockquote', 'code-block'],
+        [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+        [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+        [{ 'direction': 'rtl' }],                         // text direction
+        // array for drop-downs, empty array = defaults
+        [{ 'size': [] }],
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+        [{ 'font': [] }],
+        [{ 'align': [] }],
+        ['image', 'video'], 
+        ['clean'],                                         
+      ];
+    
+    quillEditor=new Quill('#editor',{                   //editor setup
+        theme:'snow',
+        modules:{
+            cursors:true,
+            toolbar:toolbarOptions
+        }
+    })
+    
+    fitToParent(textEditor.children[0],100,10)           //editor toolbar takes 10vh and 100% width of the editor container
+    fitToParent(textEditor.children[1],100,50)          //editor main area takes 50vh and 100% width of the editor container
+
+    /*editor close button, which hides the editor from the screen when clicked
+    Button's innerHTML is modified to represent an 'X'  */
+    const textEditorCloseBtn=document.querySelector('#ql-close')                //configure and style button that closes editor
+    textEditorCloseBtn.innerHTML='<div class="nav-cancel is-active" id="nav-cancel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg></div>'
+    textEditorCloseBtn.addEventListener('click',()=>{textEditor.style.display="none"})
+
+}
+
+/*
+  This function adjusts the dimensions of a Quill editor element to fit its parent container.
+*/
+function fitToParent(element,width,height) {            
+    element.style.width = `${width}%`;
+    element.style.height = `${height}vh`;
+    element.width = element.offsetWidth;
+    element.height = element.offsetHeight;
+}

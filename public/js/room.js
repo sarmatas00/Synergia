@@ -9,8 +9,10 @@ const roomid = params.get("room");
 let username;
 let sd = 1;
 
+
 let emoOn=false;
 var handsOn=false;
+
 let docs={};    
 let editor={}                                     
 
@@ -1799,7 +1801,7 @@ syncChat.addEventListener('click',async (evt)=>{
 /*displays a modal on the user's screen that has contributed to the conversation a lot or very little
 the last 10 minutes. The modal goes away after 3 sec */
 socket.on("warn speaking",(speakingMuch)=>{
-    console.log(speakingMuch);
+    
     const modal = document.querySelector('#speakingModal');
     (speakingMuch)?modal.children[0].children[0].innerText="Μονωπολεις στη συζητηση":modal.children[0].children[0].innerText="Εισαι ανενεργος στη συζητηση";
     modal.style.display="block";
@@ -1807,29 +1809,6 @@ socket.on("warn speaking",(speakingMuch)=>{
         modal.style.display='none';
     },3000)
 })
-
-/*Statictics screen display when option in settings is clicked.
-A box appears in the center of the screen, where information regarding total speaking
-time of users in the room, as well as emotions are displayed. This info is refreshed every
-10 minutes. */
-const statBtn = document.querySelector("a[href='stats']");
-const statScreen = document.querySelector(".statisticsScreen");
-statBtn.addEventListener("click",(evt)=>{
-    evt.preventDefault();
-    statScreen.style.opacity='100';
-    
-})
-
-
-
-
-
-
-
-
-
-
-
 
 
 const config = {
@@ -2062,6 +2041,54 @@ function checkGestureCombination(chosenHand, poseData,resultLayer) {
     resultLayer.innerText = gestureStrings.dont
     pair.clear();
 }
+
+
+/*Statictics screen display when option in settings is clicked.
+A box appears in the center of the screen, where information regarding total speaking
+time of users in the room, as well as emotions are displayed. This info is refreshed every
+time a user stops speaking, or when he clicks the button to view the info */
+const statBtn = document.querySelector("a[href='stats']");
+const statScreen = document.querySelector(".statisticsScreen");
+const timeStat = document.querySelector(".totalTimeList");
+statBtn.addEventListener("click",(evt)=>{
+    evt.preventDefault();
+    statScreen.style.opacity='100';
+    document.querySelector('#leftcont').style.filter="blur(10px)";
+
+    socket.emit("get statistics",roomid);
+    
+})
+
+const statsCloseBtn=document.querySelector('#stat-close')                //configure and style button that closes editor
+statsCloseBtn.innerHTML='<div class="nav-cancel is-active" id="nav-cancel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg></div>'
+statsCloseBtn.addEventListener("click",(evt)=>{
+    document.querySelector('#leftcont').style.filter="";
+    statScreen.style.opacity='0';
+    
+})
+
+/*get total speaking time for every user from server.
+For every user check if their name already appears on the panel and make new <li> with their stats if not
+Extract the number of seconds from the <li> and update it to the new time value if the stat is already on the panel */
+
+socket.on("get statistics",async (time)=>{
+    const totalTime= await time;
+    if (totalTime){
+        totalTime.forEach((user)=>{
+            const exists=document.querySelector(`#${user.username}`);
+            if(exists){
+                const seconds = exists.innerHTML.match(/\d+ seconds/g).join("");
+                (seconds.match(/\d/g).join("")<user.total)?exists.innerHTML=`${user.username} --> ${user.total} seconds (${(user.total/60).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`:null;
+            }else{
+                const newListStat = document.createElement("li");
+                newListStat.setAttribute("id",`${user.username}`);
+                newListStat.innerHTML=`${user.username} --> ${user.total} seconds (${(user.total/60).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`;
+                timeStat.appendChild(newListStat);
+            }
+        })
+    }
+})
+
 
 
 

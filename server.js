@@ -207,7 +207,7 @@ io.on('connect', socket => {
         }
     })
 
-    socket.on('detect-speaker',(roomid,isSpeaking)=>{                           //transmit to users in a room who is currently speaking
+    socket.on('detect-speaker',async (roomid,isSpeaking)=>{                           //transmit to users in a room who is currently speaking
         /*first find the index of user in speakingTime object to retrive his total speaking time */
         if(speakingTime[roomid]){
                 const index=speakingTime[roomid].findIndex(user=>user.username===socketname[socket.id]);
@@ -215,13 +215,14 @@ io.on('connect', socket => {
                 speakingTime[roomid][index].start=Date.now();
             }else{                                              //when he stops speaking
                 speakingTime[roomid][index].total+=Math.floor((Date.now()-speakingTime[roomid][index].start)/1000);             //add time he spoke to total time in seconds 
-                if(speakingTime[roomid].reduce((prev,cur)=>{return prev+cur.total},0)/60>=10){                              //calculate if all users in room have 10 been speaking for 10 minutes
+                if(speakingTime[roomid].reduce((prev,cur)=>{return prev+cur.total},0)/5>=1){                              //calculate if all users in room have 10 been speaking for 10 minutes
                     warnUsers(speakingTime[roomid]);                                                            //warn the users that speak a lot and little
                     speakingTime[roomid].forEach((user)=>{                                                      //update db with the times for each user and restart 10 minutes tracking for the room
                         db.updateSpeakingTime(roomid,user.username,user.total);
                         user.total=0;
                     });
                 }
+                io.to(roomid).emit("get statistics",await stats(roomid));                                       //update statistics panel with new total speaking time
             }
  
         }
@@ -229,6 +230,25 @@ io.on('connect', socket => {
             socket.to(roomid).emit('detect-speaker', rooms[roomid].filter(pid => pid == socket.id),isSpeaking)              //transmit the sid of user speaking
         }
     })
+
+    /*activated when user wants to view statistics panel */
+    socket.on("get statistics",async (roomid)=>{
+        socket.emit("get statistics",await stats(roomid));
+    })
+
+    /*calculate total speaking time for each user in a room and return it */
+    async function stats(roomid){
+        let time=[];
+        if(speakingTime[roomid]){
+            await Promise.all(speakingTime[roomid].map(async (user)=>{
+                const pastTime=(await db.getSpeakingTime(roomid,user.username)).time;
+                time.push({username:user.username,total:user.total+pastTime});
+            }))
+            return time;
+        }else{
+            return null;
+        }
+    }
 
     /*this function takes all speaking times for users in a room and calculated the percentage
     that every user has spoken the last 10 minutes. Emit a message to speak more to the users that have less than 25% speaking time
