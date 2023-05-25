@@ -159,10 +159,16 @@ io.on('connect', socket => {
         rooms[socketroom[socket.id]].splice(index, 1);
         io.to(socketroom[socket.id]).emit('user count', rooms[socketroom[socket.id]].length);
         console.log('--------------------');
+        if(rooms[socketroom[socket.id]].length===0){
+            console.log("Delete emojis");
+            db.deleteEmojis(socketroom[socket.id]);
+
+        }
 
         if(rooms[socketroom[socket.id]]==undefined){               //remove document info and cursor locations when room has emptied
             cursors=cursors.filter(cursor=>cursor.roomid!==socketroom[socket.id])
             delete docs[socketroom[socket.id]]
+            
         }else{
             if(cursors.some((cursor)=>cursor.socketID===socket.id)){            //if a user exits but the room still exists
                 socket.to(socketroom[socket.id]).emit('remove user cursor',cursors.find((cursor)=>cursor.socketID===socket.id).id)          //find cursor info and broadcast it to other users to remove it

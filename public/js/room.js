@@ -2,14 +2,16 @@ import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.5.53/+esm'
 import {QuillBinding} from 'https://cdn.jsdelivr.net/npm/y-quill@0.1.5/+esm'
 import {SocketIOProvider} from 'https://cdn.jsdelivr.net/npm/y-socket.io@1.1.0/+esm'
 import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
-
+import { gestures } from "./gestures.js"
 const socket = io();
 const myvideo = document.querySelector("#vd1");
 const roomid = params.get("room");
 let username;
 let sd = 1;
 
-let emoOn=false; 
+
+let emoOn=false;
+var handsOn=false;
 
 let docs={};    
 let editor={}                                     
@@ -30,6 +32,7 @@ const textIcon = document.querySelector('.text-icon');
 const inviteButt = document.getElementById('invite');
 const raiseButt = document.getElementById('Raise_Hand');
 const emojiDisp = document.getElementById('Emoji_Display');
+const HandTrack=document.getElementById('HandTrack');
 const chatButt = document.getElementById('chat');
 const teamButt = document.getElementById('team');
 const teamcont = document.getElementById('teamcont');
@@ -522,19 +525,29 @@ function startCall() {
 
 raiseButt.addEventListener('click', () => {
 	
+    
     if (document.getElementById('raiseHand').style.display == "none")
 	{
+        console.log(handsOn," and we inside true if")
+        clicked=true;
 			document.getElementById('raiseHand').style.display = "block";
+            document.getElementById('raiseHand').style.visibility = "visible";
 			rname = username;
+            //document.getElementById(`imH`).src='img/raisedhand.png';
+            
 			socket.emit('action', 'raiseHand');
 			
 	}
 	else 
 	{
+        clicked=false;
+        console.log(handsOn," and we inside false if")
        	document.getElementById('raiseHand').style.display = "none";
+           document.getElementById('raiseHand').style.visibility = "hidden";
 		rname ='';
 		socket.emit('action', 'raiseOff');
-	}
+	
+}
     
 
 })
@@ -605,7 +618,7 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
 			teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> `+ '<br>';
 			//emo.classList.add('nametag');
             emo.innerHTML = ` <img id=\"emo${sid}\" src=\"img/neutral.png\" width=\"50px\" height=\"50px\">`;
-			raiseh.innerHTML = " <img src=\"img/raisedhand.png\" width=\"50px\" height=\"50px\">";
+			raiseh.innerHTML = ` <img id=\"raisePic${sid}\" src=\"img/raisedhand.png\" width=\"50px\" height=\"50px\">`;
             vidCont.id = sid;
             muteIcon.id = `mute${sid}`;
             videoOff.id = `vidoff${sid}`;
@@ -1692,7 +1705,7 @@ function turnOnEmojis(){
             document.getElementById(`iml`).src="neutral.png";
             console.log("neutralized local");
         } 
-            }, 150);
+            }, 200);
         }
         
         }
@@ -1742,13 +1755,14 @@ detectionInterval=setInterval(()=>{
 
 
 
-    //every interval emotions are reset and loged to database  
+    //every interval emotions are reset and loged to database 
+    
     for(let sid in connections){
         detection[sid]["surprised"]=0;detection[sid]["smile"]=0;detection[sid]["angry"]=0;detection[sid]["scared"]=0;detection[sid]["disgust"]=0;detection[sid]["sad"]=0;
      }
      detection["loc"]["surprised"]=0;detection["loc"]["smile"]=0;detection["loc"]["angry"]=0;detection["loc"]["scared"]=0;detection["loc"]["disgust"]=0;detection["loc"]["sad"]=0;
     
-},3000)
+},15000)
 }else{
     if(detectionInterval){
         clearInterval(detectionInterval);
@@ -1796,6 +1810,239 @@ socket.on("warn speaking",(speakingMuch)=>{
     },3000)
 })
 
+
+const config = {
+    video: { width: 640, height: 480, fps: 30 }
+  }
+  
+  const landmarkColors = {
+    thumb: 'red',
+    index: 'blue',
+    middle: 'yellow',
+    ring: 'green',
+    pinky: 'pink',
+    wrist: 'white'
+  }
+  
+  const gestureStrings = {
+    'thumbs_up': '👍',
+    'victory': '✌🏻',
+    'rock': '✊️',
+    'paper': '🖐',
+    'scissors': '✌️',
+    'dont': '🙅'
+  }
+  
+  const base = ['Horizontal ', 'Diagonal Up ']
+  const dont = {
+    left: [...base].map(i => i.concat(`Right`)),
+    right: [...base].map(i => i.concat(`Left`))
+  }
+  
+  async function createDetector() {
+    return window.handPoseDetection.createDetector(
+      window.handPoseDetection.SupportedModels.MediaPipeHands,
+      {
+        runtime: "mediapipe",
+        modelType: "full",
+        maxHands: 2,
+        solutionPath: `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915`,
+      }
+    )
+  }
+
+
+
+
+handListener();
+
+async function handListener(){
+    let handCheck=document.getElementById("handsOn");
+    
+    //If the element hasnt been created before it's created now and the button listener is created
+    if(handCheck==null){
+        let listenCheck=document.createElement('div')
+        listenCheck.innerHTML="<i id=\"handsOn\"></i>";
+        document.getElementById("room").appendChild(listenCheck);
+    //handsOn signals if the button toggle is on or off
+    handsOn=false;
+    //Hand tracking button listener
+    HandTrack.addEventListener('click',async ()=>{
+
+        
+        if(handsOn){
+            console.log("hands off");
+            handsOn=false;
+            //startInterval(false);
+            //clearInterval(intervalID);
+            //intervalID=null;
+            
+            document.getElementById('raiseHand').style.display = "none";
+           
+        }  
+        //Hand tracking is turned on 
+        else{
+           
+            
+            handsOn=true;
+            console.log("handsOn");
+            /*
+            handTracking(myvideo);
+            for(let sid in connections)
+                handTracking(document.getElementById(`video${sid}`));
+            //var detection=turnOnEmojis();
+            */
+            const knownGestures = [
+                fp.Gestures.VictoryGesture,
+                fp.Gestures.ThumbsUpGesture,
+                ...gestures
+              ]
+            const detector1 = await createDetector()
+            
+            const GE = new fp.GestureEstimator(knownGestures)  
+            
+           
+           handTracking(myvideo,document.getElementById("raiseHand"),detector1,GE,false);
+          
+          for(let sid in connections){
+            let detector=await createDetector();
+            handTracking(document.getElementById(`video${sid}`),document.getElementById(`raise${sid}`),detector,GE,false);
+            document.getElementById(`raise${sid}`).style.display = "block";
+            document.getElementById(`raise${sid}`).style.visibility='visible';
+          }
+          
+        
+        document.getElementById(`raiseHand`).style.display="block";
+        document.getElementById(`raiseHand`).style.visibility='visible'; 
+            
+           
+                  
+               
+            
+            
+            
+
+        }         
+})
+    }
+}
+
+var clicked=false;;
+
+async function handTracking(video,element,detector,GE){
+    
+   
+    //const ctx = canvas.getContext("2d")
+    
+  // configure gesture estimator
+  // add "✌🏻" and "👍" as sample gestures
+  const estimateHands = async () => {
+
+    
+
+    // get hand landmarks from video
+    const hands = await detector.estimateHands(video, {
+      flipHorizontal: true
+    })
+
+    for (const hand of hands) {
+      for (const keypoint of hand.keypoints) {
+        const name = keypoint.name.split('_')[0].toString().toLowerCase()
+        const color = landmarkColors[name]
+        
+      }
+
+      const keypoints3D = hand.keypoints3D.map(keypoint => [keypoint.x, keypoint.y, keypoint.z])
+      const predictions = GE.estimate(keypoints3D, 9)
+      
+      if (predictions.gestures.length > 0) {
+
+        const result = predictions.gestures.reduce((p, c) => (p.score > c.score) ? p : c)
+        const found = gestureStrings[result.name]
+        // find gesture with highest match score
+        const chosenHand = hand.handedness.toLowerCase()
+        
+
+        
+          if(found===gestureStrings.paper ){
+            if(!clicked){
+            console.log("wanna raise");
+            
+            socket.emit('action', 'raiseHand');
+            clicked=true;
+           element.innerHTML='<img  width="50" height="50" src="img/raisedhand.png"> '
+            
+            
+            }
+          }else{
+            if(clicked){
+                console.log("stop raise");
+                socket.emit('action', 'raiseHand');
+                raiseButt.click();
+                clicked=false;
+                element.innerText = found;
+            }else{
+                element.innerText = found;
+              }
+          }
+          
+          continue
+        
+        checkGestureCombination(chosenHand, predictions.poseData,element)
+      }
+
+    }
+    // ...and so on
+
+    
+    if(handsOn){
+        setTimeout(() => { estimateHands() }, 1000 / config.video.fps)
+    }else{
+        element.style.visibility='hidden';
+        console.log("turning off element is ",element.id, element.id==="raiseHand");
+        
+        if(element.id==='raiseHand'){
+            element.innerHTML=`<img width="50" height="50"src="img/raisedhand.png">`;
+
+        }else{
+            let sid=element.id.replace('raisePic','');
+            element.innerHTML=`<img id="raisePic${sid}" width="50" height="50"src="img/raisedhand.png">`;
+        }
+        
+    }
+  }
+  setTimeout(()=>{
+    estimateHands();
+  },250);
+  
+  console.log("Starting predictions")
+}
+
+
+
+    
+
+
+
+  
+  const pair = new Set();
+
+function checkGestureCombination(chosenHand, poseData,resultLayer) {
+    const addToPairIfCorrect = (chosenHand) => {
+      const containsHand = poseData.some(finger => dont[chosenHand].includes(finger[2]))
+      if(!containsHand) return;
+      pair.add(chosenHand)
+    }
+
+    addToPairIfCorrect(chosenHand)
+    if(pair.size !== 2) return;
+    
+    resultLayer=document.getElementById("raiseHand");
+    resultLayer.innerText = gestureStrings.dont
+    pair.clear();
+}
+
+
 /*Statictics screen display when option in settings is clicked.
 A box appears in the center of the screen, where information regarding total speaking
 time of users in the room, as well as emotions are displayed. This info is refreshed every
@@ -1811,7 +2058,6 @@ statBtn.addEventListener("click",(evt)=>{
     socket.emit("get statistics",roomid);
     
 })
-
 
 const statsCloseBtn=document.querySelector('#stat-close')                //configure and style button that closes editor
 statsCloseBtn.innerHTML='<div class="nav-cancel is-active" id="nav-cancel"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"/></svg></div>'
@@ -1842,6 +2088,7 @@ socket.on("get statistics",async (time)=>{
         })
     }
 })
+
 
 
 
