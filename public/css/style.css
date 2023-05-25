@@ -1318,6 +1318,7 @@ ul.primary li:hover > a{
 
 .statisticsScreen{
   background-color: white;
+  opacity: 0;
   width: 50vw;
   height: 50vh;
   bottom: 25%;

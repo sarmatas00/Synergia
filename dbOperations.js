@@ -2,6 +2,7 @@
 //get database configuration
 const operator=require('firebase/database');
 const db=require('./config.js');
+const { get } = require('node-emoji');
 /*
   stores a message in a specific chat room.
   message is stored using as the key the createdAt timestamp
@@ -129,18 +130,61 @@ async function getSpeakingTime(room,username){
     return null;
 }
 
-function saveEmojis(room,detection){
+
+async function getEmojis(room,sid){
+    const dbRef = operator.ref(db);
+    try {
+        const emoji = await operator.get(operator.child(dbRef,`emojis/${room}/${sid}/`))
+        if(emoji.exists()){
+            return emoji.val();
+        }
+    } catch (error) {
+        console.log(error);
+    }
+    return null;
+}
+
+async function saveEmojis(room,detection){
     console.log("doing db things");
+    const dbRef=operator.ref(db);
     
-     for(sid in detection){
-         for(emotion in detection[sid]){
-             operator.set(operator.ref(db,`emojis/${room}/${sid}/${emotion}`),detection[sid][emotion]);
-         }
-     }
+    let value=null;let ref=null;
+    console.log("is this null ",await getEmojis(room,Object.keys(detection)[0]));
+    if(await getEmojis(room,Object.keys(detection)[0])==null){
+     for(let sid in detection){
+        console.log("other print ",await getEmojis(room,sid));
+        for(let emotion in detection[sid]){
+            //console.log(operator.ref(db,`emojis/${room}/${sid}/${emotion}`));
+            operator.set(operator.ref(db,`emojis/${room}/${sid}/${emotion}`),detection[sid][emotion]);
+            console.log("what is this even ",detection[sid][emotion]);
+        }
+    }
+   }else{
+    console.log("table created");
+    let personEmotions="";let newVal=0;
+    for(let sid in detection){
+        
+        personEmotions=await getEmojis(room,sid);
+        console.log("runnin the loop for ",sid, "stored value angry",personEmotions["angry"]," this should be added ",detection[sid]["angry"]);
+        for(let emotion in detection[sid]){
+            personEmotions[emotion]=detection[sid][emotion]+personEmotions[emotion];
+        }
+        console.log("new value ",personEmotions["angry"]);
+        //operator.set(operator.ref(db,`emojis/${room}/${sid}`),personEmotions);
+        operator.update(operator.ref(db,`emojis/${room}/${sid}`),personEmotions);
+
+    }
+   }      
+ }
+
+ function deleteEmojis(roomid){
+    console.log("Deleteing ",roomid);
+    operator.remove(operator.ref(db,`emojis/${roomid}`));
+
  }
 
 
 
-module.exports = {getSpeakingTime,storeSpeakingTime,updateSpeakingTime,storeMessage,storeGroupMessage,archiveChatroom,getMessages,getGroupMessages,archiveGroupChatroom,saveEmojis}
+module.exports = {getSpeakingTime,storeSpeakingTime,updateSpeakingTime,storeMessage,storeGroupMessage,archiveChatroom,getMessages,getGroupMessages,archiveGroupChatroom,saveEmojis,deleteEmojis}
 
 
