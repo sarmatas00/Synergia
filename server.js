@@ -149,6 +149,21 @@ io.on('connect', socket => {
         roomBoard[socketroom[socket.id]] = url;
     })
 
+    socket.on('update',room=>{
+
+        let ret=[];
+        for(let sid in socketroom){
+            console.log(sid);
+            if(socketroom[sid]===room){
+                ret.push(sid);
+                console.log(sid," in ",room);
+
+            }
+        }
+        console.log("loop done ",ret);
+        socket.to(room).emit('updatedSid',ret);
+    })
+
     socket.on('disconnect', () => {
         if (!socketroom[socket.id]) return;
         socket.to(socketroom[socket.id]).emit('message', `${socketname[socket.id]} left the chat.`, `Bot`, moment().format(
