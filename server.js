@@ -207,17 +207,18 @@ io.on('connect', socket => {
 
     //when a new user enters the room, update their doc , so it matches with other users'  
     socket.on("update-users-doc",(roomid)=>{
+        
         socket.emit("update-users-doc",docs[roomid])
 
     })
+    /*store editor content for use in new clients */
+    socket.on("store-editor-state",(content,roomid)=>{
+        docs[roomid]=content
+    })
 
-    // Broadcast the change made in the editor to all connected clients except the sender and store it in the data array
-    socket.on('editor-change', (delta,roomid) => {
-        if(!docs[roomid]){
-            docs[roomid]=[delta];    
-        }else{
-            docs[roomid].push(delta);    
-        }
+    // Broadcast the change made in the editor to all connected clients except the sender 
+    socket.on('editor-change', (delta) => {
+        
         socket.broadcast.emit('editor-change', delta);
     });
 

@@ -844,7 +844,7 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
 
     editor.on('text-change', function (delta) {                 //when a change is made in the editor, emit it to other users to update their editors
         if (!applyingChange) {
-          socket.emit('editor-change', delta,roomid);
+          socket.emit('editor-change', delta);
         }
     });
       
@@ -852,13 +852,13 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
     socket.on('editor-change', function (delta) {
         applyingChange = true;
         editor.updateContents(delta);
+        socket.emit("store-editor-state",editor.getContents(),roomid);
         applyingChange = false; 
-    });
-    
-    if(docInfo){                                    //if not the first user in the room, send a message to update editor to match other users'
-        socket.emit("update-users-doc",roomid) 
+    });        
+
+    //emit a message to update editor to match other users'
+    socket.emit("update-users-doc",roomid) 
         
-    }
     
 
     
@@ -1009,9 +1009,9 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
 socket.on("update-users-doc",(docInfo)=>{
     applyingChange=true;
     console.log(docInfo);
-    docInfo.forEach((delta)=>{
-        editor.updateContents(delta);
-    })
+    if(docInfo){
+        editor.setContents(docInfo)
+    }
     applyingChange=false
 })
 
