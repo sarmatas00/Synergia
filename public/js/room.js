@@ -858,9 +858,6 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
     if(docInfo){                                    //if not the first user in the room, send a message to update editor to match other users'
         socket.emit("update-users-doc",roomid) 
         
-    }else{                                          //if first user in the room, initiate editor's content on server 
-        socket.emit('store-doc',{delta:editor.getContents(),roomid})
-
     }
     
 
@@ -1011,6 +1008,7 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
 /*for every change that has been made to the quill collaborative editor, push it to the editor to match other users */
 socket.on("update-users-doc",(docInfo)=>{
     applyingChange=true;
+    console.log(docInfo);
     docInfo.forEach((delta)=>{
         editor.updateContents(delta);
     })

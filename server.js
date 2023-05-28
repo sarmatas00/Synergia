@@ -204,23 +204,20 @@ io.on('connect', socket => {
         db.saveEmojis(roomid,detection);
     })
 
-    //when room gets created, initiate editor document data array for that room
-    socket.on('store-doc',(docData)=>{
-        const {delta,roomid}=docData;
-        docs[roomid]=[delta];
-         
-    })
 
-    //when a new user enters the room, update the doc for all users, so the editors match 
+    //when a new user enters the room, update their doc , so it matches with other users'  
     socket.on("update-users-doc",(roomid)=>{
-        
-        io.to(socket.id).emit("update-users-doc",docs[roomid])
+        socket.emit("update-users-doc",docs[roomid])
 
     })
 
     // Broadcast the change made in the editor to all connected clients except the sender and store it in the data array
     socket.on('editor-change', (delta,roomid) => {
-        docs[roomid].push(delta);    
+        if(!docs[roomid]){
+            docs[roomid]=[delta];    
+        }else{
+            docs[roomid].push(delta);    
+        }
         socket.broadcast.emit('editor-change', delta);
     });
 
