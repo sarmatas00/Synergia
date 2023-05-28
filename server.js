@@ -5,12 +5,12 @@ const moment = require('moment');
 const socketio = require('socket.io');
 const emoji = require('node-emoji');
 const PORT = process.env.PORT || 3000;
-const ysocketio= require("y-socket.io/dist/server").YSocketIO
 const {spawn}= require('child_process');
 const net = require('net');
 
 const http = require('https');
 const fs = require('fs');
+const WebSocket = require('ws');
 
 const db=require('./dbOperations.js');
 
@@ -47,11 +47,17 @@ const isPortInUse=(port)=>{
 const app = express();
 const server = http.createServer(serverConfig, app);
 
-const io = socketio(server);
+/*Establish new websocket server to use with collaborative editor's y-websocket module */
+const wss = new WebSocket.Server({ server });
+wss.on('connection', (ws) => {
+    console.log('A user connected via WebSocket');
+    ws.on('close', () => {
+      console.log('A user disconnected via WebSocket');
+    });
+  });
 
-//initialize YJS document synchronization library over socketIO
-const YSocketIO=new ysocketio(io)
-YSocketIO.initialize()
+
+const io = socketio(server);
 
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -59,7 +65,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 let rooms = {};
 let socketroom = {};
 let socketname = {};
-let micSocket = {};
+let micSocket = {}; 
 let videoSocket = {};
 let roomBoard = {};
 let docs={};
@@ -198,12 +204,27 @@ io.on('connect', socket => {
         db.saveEmojis(roomid,detection);
     })
 
-    //when room gets created, store new document data to emit to other users
+    //when room gets created, initiate editor document data array for that room
     socket.on('store-doc',(docData)=>{
-        const {doc,type,provider,roomid}=docData;
-        docs[roomid]={doc,type,provider};
-        
+        const {delta,roomid}=docData;
+        docs[roomid]=[delta];
+         
     })
+
+    //when a new user enters the room, update the doc for all users, so the editors match 
+    socket.on("update-users-doc",(roomid)=>{
+        
+        io.to(socket.id).emit("update-users-doc",docs[roomid])
+
+    })
+
+    // Broadcast the change made in the editor to all connected clients except the sender and store it in the data array
+    socket.on('editor-change', (delta,roomid) => {
+        docs[roomid].push(delta);    
+        socket.broadcast.emit('editor-change', delta);
+    });
+
+      
 
     //for every user change in the editor, this event tracks the new pointer location in the editor
     //and emits it to all the other users in the room in order to support multiple cursors

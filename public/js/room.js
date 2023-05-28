@@ -2,13 +2,14 @@ import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.5.53/+esm'
 import {QuillBinding} from 'https://cdn.jsdelivr.net/npm/y-quill@0.1.5/+esm'
 import {SocketIOProvider} from 'https://cdn.jsdelivr.net/npm/y-socket.io@1.1.0/+esm'
 import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
+import * as yWeb from 'https://cdn.jsdelivr.net/npm/y-websocket@1.5.0/+esm'
 import { gestures } from "./gestures.js"
 const socket = io();
 const myvideo = document.querySelector("#vd1");
 const roomid = params.get("room");
 let username;
 let sd = 1;
-
+let applyingChange = false;
 
 let emoOn=false;
 var handsOn=false;
@@ -293,14 +294,10 @@ function fitToParent(element,width,height) {            //adjusts quill editors 
 }
 
 
-//create yjs document and connect it with the socket
+//create yjs document and connect it with a websocket provider
 function loadDoc(){                 
     const doc = new Y.Doc()
-    const provider= new SocketIOProvider('https://localhost:3000',roomid,doc,{
-        // disableBc: true,
-        // auth: { token: 'valid-token' },
-      })
-      
+    const provider = new yWeb.WebsocketProvider("wss://localhost:3000",roomid,doc)
     const type= doc.getText(roomid)
 
     return {type,provider,doc}
@@ -818,7 +815,7 @@ socket.on('updatedSid',(sids)=>{
 })
 
 
-socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodispinfo,docInfo) => {
+socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raiseinfo, nodispinfo) => {
     socket.emit('getCanvas');
     if (cnames)
         cName = cnames;
@@ -837,27 +834,32 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
 		
 	 	
 
-    //if room was just created or new user enters, create or load text editor and provider and set cursors
-    if(docInfo==undefined){
-        const {type,provider,doc}=loadDoc()
-        loadQuill()
-        setMultipleCursors()
-        provider.awareness.setLocalStateField('user',{              //username and color appears on user cursor
-            name:username,
-            color:getCursorColor(0)
-        })
-        const binding= new QuillBinding(type,editor,provider.awareness)
-        docs[roomid]={doc,provider,type,binding}                    //store document info
-        socket.emit('store-doc',{doc,type,provider:provider.awareness,roomid})
-    }else{
-        const {doc,type,provider}=docInfo
-        loadQuill()
-        setMultipleCursors(editor)
-        provider.setLocalStateField('user',{              //username and color appears on user cursor
-            name:username,
-            color:getCursorColor(0)
-        })
-        const binding= new QuillBinding(type,editor,provider)
+    /*QUILL EDITOR SETUP */
+    loadQuill()                                                 //initiate quill editor
+    const {type,provider,doc}=loadDoc()                         //load editor's config
+    setMultipleCursors()                                        //set a cursor for the user in the editor
+    const binding= new QuillBinding(type,editor,provider.awareness)                 //bind the editor to the websocket sever, to collaborate with other users
+    docs[roomid]={doc,provider,type,binding}                    //store document info
+
+
+    editor.on('text-change', function (delta) {                 //when a change is made in the editor, emit it to other users to update their editors
+        if (!applyingChange) {
+          socket.emit('editor-change', delta,roomid);
+        }
+    });
+      
+      // Receive changes from the server and apply them to the local document
+    socket.on('editor-change', function (delta) {
+        applyingChange = true;
+        editor.updateContents(delta);
+        applyingChange = false; 
+    });
+    
+    if(docInfo){                                    //if not the first user in the room, send a message to update editor to match other users'
+        socket.emit("update-users-doc",roomid) 
+        
+    }else{                                          //if first user in the room, initiate editor's content on server 
+        socket.emit('store-doc',{delta:editor.getContents(),roomid})
 
     }
     
@@ -1003,7 +1005,16 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, raiseinfo, nodis
             .catch(handleGetUserMediaError);
     }
 	
-	
+	 
+})
+
+/*for every change that has been made to the quill collaborative editor, push it to the editor to match other users */
+socket.on("update-users-doc",(docInfo)=>{
+    applyingChange=true;
+    docInfo.forEach((delta)=>{
+        editor.updateContents(delta);
+    })
+    applyingChange=false
 })
 
 teamButt.addEventListener('click', () => {
@@ -1378,7 +1389,6 @@ whiteboardButt.addEventListener('click', () => {
         whiteboardCont.style.visibility = 'visible';
         boardVisisble = true;
         editorVisible = false;
-        docs[roomid].provider.disconnect()
     }
 })
 
@@ -1389,14 +1399,12 @@ textIcon.addEventListener('click', () => {
         hideUserCursors()
         textEditor.style.visibility = 'hidden';
         editorVisible = false;
-        docs[roomid].provider.disconnect()
     }
     else {
         whiteboardCont.style.visibility = 'hidden';
         textEditor.style.visibility = 'visible';
         editorVisible = true;
         boardVisisble = false;
-        docs[roomid].provider.connect()
     }
 })
 
