@@ -155,31 +155,44 @@ async function getEmojis(room,sid){
     }
     return null;
 }
+function missingName(sids,saved){
+    for(let sid in sids){
+        if(!saved.includes(sid)){
+            return sid;
+        }
+    }
 
-async function saveEmojis(room,detection){
+}
+async function saveEmojis(room,detection,local){
     console.log("doing db things");
     const dbRef=operator.ref(db);
-    
+    let saved=[];
     let value=null;let ref=null;
     console.log("is this null ",await getEmojis(room,Object.keys(detection)[0]));
     if(await getEmojis(room,Object.keys(detection)[0])==null){
      for(let sid in detection){
+       
+
+        if(sid==null){sid=local;}
         console.log("other print ",await getEmojis(room,sid));
         for(let emotion in detection[sid]){
             //console.log(operator.ref(db,`emojis/${room}/${sid}/${emotion}`));
             operator.set(operator.ref(db,`emojis/${room}/${sid}/${emotion}`),detection[sid][emotion]);
             console.log("what is this even ",detection[sid][emotion]);
         }
+        saved.push(sid);
+    
     }
    }else{
     console.log("table created");
     let personEmotions="";let newVal=0;
     for(let sid in detection){
-        
+        if(sid==null){sid=local;}
         personEmotions=await getEmojis(room,sid);
         console.log("runnin the loop for ",sid, "stored value angry",personEmotions["angry"]," this should be added ",detection[sid]["angry"]);
         for(let emotion in detection[sid]){
             personEmotions[emotion]=detection[sid][emotion]+personEmotions[emotion];
+            console.log("error point ",personEmotions," detection ", detection);
         }
         console.log("new value ",personEmotions["angry"]);
         //operator.set(operator.ref(db,`emojis/${room}/${sid}`),personEmotions);

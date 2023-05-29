@@ -802,7 +802,10 @@ socket.on('video-offer', handleVideoOffer);
 socket.on('new icecandidate', handleNewIceCandidate);
 
 socket.on('video-answer', handleVideoAnswer);
-var sidsNames={};var local=""; 
+var sidsNames={};var local=username; 
+if(username==null){
+    username=nameField.value;
+}
 socket.on('updatedSid',(sids)=>{
     sids.forEach(sid=>{
         sidsNames[sid]=cName[sid]
@@ -1519,6 +1522,7 @@ function turnOnEmojis(){
     let video="";
     let sids="";
     let ctr=0;
+    if(local==null){local=document.getElementById('myname').innerText.replace(' (You)','');}
     var detection={};detection[local]={};
     detection[local]["surprised"]=0;detection[local]["scared"]=0;detection[local]["angry"]=0;detection[local]["sad"]=0;detection[local]["smile"]=0;detection[local]["disgust"]=0;
     //For every connected user we track his video and output the according emoji to his icon
@@ -1764,9 +1768,11 @@ detectionInterval=setInterval(()=>{
         }
         console.log(`${cName[sid]} has been feeling mostly ${emotionMajority} with a count of ${count}/20`);
         console.log(`local ${local} has been feeling mostly ${localEmotion} with a count of ${localCount}/20`);
-        socket.emit('saveEmojis',detection,roomid);
+        
         
     }
+    if(local==null){local=document.getElementById('myname').innerText.replace(' (You)','');console.log(" i am locall ",local);}
+    socket.emit('saveEmojis',detection,roomid,local);
 
 
 
