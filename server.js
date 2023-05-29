@@ -157,17 +157,8 @@ io.on('connect', socket => {
 
     socket.on('update',room=>{
 
-        let ret=[];
-        for(let sid in socketroom){
-            console.log(sid);
-            if(socketroom[sid]===room){
-                ret.push(sid);
-                console.log(sid," in ",room);
-
-            }
-        }
-        console.log("loop done ",ret);
-        socket.to(room).emit('updatedSid',ret);
+        
+        socket.to(room).emit('updatedSid',getSids(room));
     })
 
     socket.on('disconnect', () => {
@@ -200,8 +191,8 @@ io.on('connect', socket => {
         
     });
 
-    socket.on('saveEmojis',(detection,roomid)=>{
-        db.saveEmojis(roomid,detection);
+    socket.on('saveEmojis',(detection,roomid,local)=>{
+        db.saveEmojis(roomid,detection,local);
     })
     
 
@@ -296,6 +287,19 @@ io.on('connect', socket => {
         return usersEmotions;
     }
 
+    function getSids(room){
+        let ret=[];
+        for(let sid in socketroom){
+            console.log(sid);
+            if(socketroom[sid]===room){
+                ret.push(sid);
+                console.log(sid," in ",room);
+
+            }
+        }
+        return ret
+
+    }
     /*this function takes all speaking times for users in a room and calculated the percentage
     that every user has spoken the last 10 minutes. Emit a message to speak more to the users that have less than 25% speaking time
     and a message to speak more to users that have more than 75% speaking time */
