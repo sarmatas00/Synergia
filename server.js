@@ -197,6 +197,7 @@ io.on('connect', socket => {
     socket.on('saveEmojis',(detection,roomid)=>{
         db.saveEmojis(roomid,detection);
     })
+    
 
     //when room gets created, store new document data to emit to other users
     socket.on('store-doc',(docData)=>{
@@ -245,7 +246,21 @@ io.on('connect', socket => {
 
     /*activated when user wants to view statistics panel */
     socket.on("get statistics",async (roomid)=>{
-        socket.emit("get statistics",await stats(roomid));
+        //socket.emit("get statistics",await stats(roomid));
+        let emojiStats=await db.emojiStats(roomid);
+        let max=0,emotionMajority="";
+        for(let name in emojiStats){
+            max=0,emotionMajority="";
+            for(let emotion in emojiStats[name]){
+                if(emojiStats[name][emotion]>max){
+                    max=emojiStats[name][emotion];
+                    emotionMajority=emotion;
+                }
+            }
+            console.log(`user ${name} is feeling mostly ${emotionMajority} with a duration of ${max*200}ms`);
+            
+        }
+        //eg. emojiStats[username]["happy"]=5; 5*200ms
     })
 
     /*calculate total speaking time for each user in a room and return it */

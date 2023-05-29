@@ -130,7 +130,19 @@ async function getSpeakingTime(room,username){
     return {time:0};
 }
 
-
+async function getEmoji(room){
+    const dbRef=operator.ref(db);
+    try{
+        const emoji = await operator.get(operator.child(dbRef,`emojis/${room}`));
+        if(emoji.exists()){
+            return emoji.val();
+        }
+    } catch (error) {
+        console.log(error);
+    }
+    return null;
+    
+}
 async function getEmojis(room,sid){
     const dbRef = operator.ref(db);
     try {
@@ -183,8 +195,23 @@ async function saveEmojis(room,detection){
 
  }
 
+ async function emojiStats(roomid){
+    const dbRef = operator.ref(db);
+    try {
+        const emoji = await operator.get(operator.child(dbRef,`emojis/${roomid}/`))
+        if(emoji.exists()){
+            console.log(emoji.val())
+            return emoji.val();
+        }
+    } catch (error) {
+        console.log(error);
+    }
+    return null;
+
+ }
 
 
-module.exports = {getSpeakingTime,storeSpeakingTime,updateSpeakingTime,storeMessage,storeGroupMessage,archiveChatroom,getMessages,getGroupMessages,archiveGroupChatroom,saveEmojis,deleteEmojis}
+
+module.exports = {getEmoji,emojiStats,getSpeakingTime,storeSpeakingTime,updateSpeakingTime,storeMessage,storeGroupMessage,archiveChatroom,getMessages,getGroupMessages,archiveGroupChatroom,saveEmojis,deleteEmojis}
 
 

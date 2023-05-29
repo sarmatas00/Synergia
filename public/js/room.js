@@ -810,11 +810,7 @@ socket.on('updatedSid',(sids)=>{
     sids.forEach(sid=>{
         sidsNames[sid]=cName[sid]
     })
-    for(let x in sidsNames){
-        if(!connections.hasOwnProperty(x));
-        local=x;
-    }
-    console.log(local," local");
+    local=username;
 })
 
 
@@ -1517,8 +1513,8 @@ function turnOnEmojis(){
     let video="";
     let sids="";
     let ctr=0;
-    var detection={};detection[cName[local]]={};
-    detection[cName[local]]["surprised"]=0;detection[cName[local]]["scared"]=0;detection[cName[local]]["angry"]=0;detection[cName[local]]["sad"]=0;detection[cName[local]]["smile"]=0;detection[cName[local]]["disgust"]=0;
+    var detection={};detection[local]={};
+    detection[local]["surprised"]=0;detection[local]["scared"]=0;detection[local]["angry"]=0;detection[local]["sad"]=0;detection[local]["smile"]=0;detection[local]["disgust"]=0;
     //For every connected user we track his video and output the according emoji to his icon
     for(let sid in connections){
     console.log("Ctr ",++ctr);
@@ -1663,28 +1659,28 @@ function turnOnEmojis(){
                                 break;
                                 case '3': 
                                     source="img/smile.png";
-                                    detection[cName[local]]["smile"]++;
+                                    detection[local]["smile"]++;
                                 break;
                                 case '4': 
                                     source="img/sad.png";
-                                    detection[cName[local]]["sad"]++;
+                                    detection[local]["sad"]++;
                                 break;
                                 case '5': 
                                     source="img/angry.png";
-                                    detection[cName[local]]["angry"]++;
+                                    detection[local]["angry"]++;
                                 break;
                                 case '6': 
                                     source="img/scared.png";
-                                    detection[cName[local]]["scared"]++;
+                                    detection[local]["scared"]++;
                                 break;
                                 case '7':
                                      source="img/disgust.png";
-                                     detection[cName[local]]["disgust"]++;
+                                     detection[local]["disgust"]++;
                                 break;
                                 
                                 case '8': 
                                 source="img/surprised.png";
-                                detection[cName[local]]["surprised"]++;
+                                detection[local]["surprised"]++;
                                 break;
                                 default: source="img/default.png";
                             
@@ -1742,7 +1738,7 @@ if(toggle){
     for(let sid in connections){
        detection[cName[sid]]["surprised"]=0;detection[cName[sid]]["smile"]=0;detection[cName[sid]]["angry"]=0;detection[cName[sid]]["scared"]=0;detection[cName[sid]]["disgust"]=0;detection[cName[sid]]["sad"]=0;
     }
-    detection[cName[local]]["surprised"]=0;detection[cName[local]]["smile"]=0;detection[cName[local]]["angry"]=0;detection[cName[local]]["scared"]=0;detection[cName[local]]["disgust"]=0;detection[cName[local]]["sad"]=0;
+    detection[local]["surprised"]=0;detection[local]["smile"]=0;detection[local]["angry"]=0;detection[local]["scared"]=0;detection[local]["disgust"]=0;detection[local]["sad"]=0;
 //every x seconds we track the users in the call emotions and do something with them
 detectionInterval=setInterval(()=>{
     //use the info eg every 3000ms there are 20 detections
@@ -1754,13 +1750,14 @@ detectionInterval=setInterval(()=>{
                 emotionMajority=emotion;
                 count=detection[cName[sid]][emotion];
             }
-            if(detection[cName[local]][emotion]>localCount){
+            if(detection[local][emotion]>localCount){
                 localEmotion=emotion;
-                localCount=detection[cName[local]][emotion];
+                localCount=detection[local][emotion];
             }
+            console.log("local ",local);
         }
         console.log(`${cName[sid]} has been feeling mostly ${emotionMajority} with a count of ${count}/20`);
-        console.log(`local has been feeling mostly ${localEmotion} with a count of ${localCount}/20`);
+        console.log(`local ${local} has been feeling mostly ${localEmotion} with a count of ${localCount}/20`);
         socket.emit('saveEmojis',detection,roomid);
         
     }
@@ -1770,11 +1767,11 @@ detectionInterval=setInterval(()=>{
 
 
     //every interval emotions are reset and loged to database 
-    
+    socket.emit('get statistics',roomid);
     for(let sid in connections){
         detection[cName[sid]]["surprised"]=0;detection[cName[sid]]["smile"]=0;detection[cName[sid]]["angry"]=0;detection[cName[sid]]["scared"]=0;detection[cName[sid]]["disgust"]=0;detection[cName[sid]]["sad"]=0;
      }
-     detection[cName[local]]["surprised"]=0;detection[cName[local]]["smile"]=0;detection[cName[local]]["angry"]=0;detection[cName[local]]["scared"]=0;detection[cName[local]]["disgust"]=0;detection[cName[local]]["sad"]=0;
+     detection[local]["surprised"]=0;detection[local]["smile"]=0;detection[local]["angry"]=0;detection[local]["scared"]=0;detection[local]["disgust"]=0;detection[local]["sad"]=0;
     
 },15000)
 }else{
