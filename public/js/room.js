@@ -840,7 +840,8 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
 
     editor.on('text-change', function (delta) {                 //when a change is made in the editor, emit it to other users to update their editors
         if (!applyingChange) {
-          socket.emit('editor-change', delta);
+            socket.emit('editor-change', delta);
+            socket.emit("store-editor-state",editor.getContents(),roomid);
         }
     });
       
@@ -848,12 +849,15 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
     socket.on('editor-change', function (delta) {
         applyingChange = true;
         editor.updateContents(delta);
-        socket.emit("store-editor-state",editor.getContents(),roomid);
         applyingChange = false; 
     });        
 
-    //emit a message to update editor to match other users'
-    socket.emit("update-users-doc",roomid) 
+    //update editor to match other users'
+    if(docInfo){
+        applyingChange=true;
+        editor.setContents(docInfo)
+        applyingChange=false
+    }
         
     
 
@@ -1001,15 +1005,6 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
 	 
 })
 
-/*for every change that has been made to the quill collaborative editor, push it to the editor to match other users */
-socket.on("update-users-doc",(docInfo)=>{
-    applyingChange=true;
-    console.log(docInfo);
-    if(docInfo){
-        editor.setContents(docInfo)
-    }
-    applyingChange=false
-})
 
 teamButt.addEventListener('click', () => {
 	
@@ -2067,6 +2062,7 @@ time a user stops speaking, or when he clicks the button to view the info */
 const statBtn = document.querySelector("a[href='stats']");
 const statScreen = document.querySelector(".statisticsScreen");
 const timeStat = document.querySelector(".totalTimeList");
+const reactions = document.querySelector(".reactions");
 statBtn.addEventListener("click",(evt)=>{
     evt.preventDefault();
     statScreen.style.opacity='100';
@@ -2084,11 +2080,13 @@ statsCloseBtn.addEventListener("click",(evt)=>{
     
 })
 
-/*get total speaking time for every user from server.
+/*Get total speaking time for every user from server.
+Also get most major emotions and their duration for every user in a room from server
 For every user check if their name already appears on the panel and make new <li> with their stats if not
-Extract the number of seconds from the <li> and update it to the new time value if the stat is already on the panel */
+Extract the number of seconds from the <li> and update it to the new time/emotion value if the stat is already on the panel
+ */
 
-socket.on("get statistics",async (time)=>{
+socket.on("get statistics",async (time,emotions)=>{
     const totalTime= await time;
     if (totalTime){
         totalTime.forEach((user)=>{
@@ -2104,6 +2102,20 @@ socket.on("get statistics",async (time)=>{
             }
         })
     }
+    const emojis = await emotions;
+    for(const user in emojis){
+        const exists=document.querySelector(`#${user}EM`);
+        if(exists){
+            const seconds = exists.innerHTML.match(/\d+ seconds/g).join("");
+            (seconds.match(/\d/g).join("")<emojis[user][1]/1000)?exists.innerHTML=`${user} is feeling mostly <span>${emojis[user][0]}</span> with a duration of <span>${(emojis[user][1]/1000).toLocaleString('en-US',{maximumFractionDigits:2})} seconds </span> (${(emojis[user][1]/(1000*60)).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`:null;
+        }else{
+            const newListStat = document.createElement("li");
+            newListStat.setAttribute("id",`${user}EM`);
+            newListStat.innerHTML=`${user} is feeling mostly <span>${emojis[user][0]}</span> with a duration of <span>${(emojis[user][1]/1000).toLocaleString('en-US',{maximumFractionDigits:2})} seconds </span> (${(emojis[user][1]/(1000*60)).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`;
+            reactions.appendChild(newListStat);
+        }
+    }
+    
 })
 
 

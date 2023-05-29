@@ -50,11 +50,11 @@ const server = http.createServer(serverConfig, app);
 /*Establish new websocket server to use with collaborative editor's y-websocket module */
 const wss = new WebSocket.Server({ server });
 wss.on('connection', (ws) => {
-    console.log('A user connected via WebSocket');
+    // console.log('A user connected via WebSocket');
     ws.on('close', () => {
-      console.log('A user disconnected via WebSocket');
+    //   console.log('A user disconnected via WebSocket');
     });
-  });
+});
 
 
 const io = socketio(server);
@@ -206,12 +206,6 @@ io.on('connect', socket => {
     
 
 
-    //when a new user enters the room, update their doc , so it matches with other users'  
-    socket.on("update-users-doc",(roomid)=>{
-        
-        socket.emit("update-users-doc",docs[roomid])
-
-    })
     /*store editor content for use in new clients */
     socket.on("store-editor-state",(content,roomid)=>{
         docs[roomid]=content
@@ -254,7 +248,6 @@ io.on('connect', socket => {
                         user.total=0;
                     });
                 }
-                io.to(roomid).emit("get statistics",await stats(roomid));                                       //update statistics panel with new total speaking time
             }
  
         }
@@ -265,9 +258,30 @@ io.on('connect', socket => {
 
     /*activated when user wants to view statistics panel */
     socket.on("get statistics",async (roomid)=>{
-        //socket.emit("get statistics",await stats(roomid));
+        
+        socket.emit("get statistics",await timeStats(roomid),await emotionStats(roomid));
+        //eg. emojiStats[username]["happy"]=5; 5*200ms
+    })
+
+    /*calculate total speaking time for each user in a room and return it */
+    async function timeStats(roomid){
+        let time=[];
+        if(speakingTime[roomid]){
+            await Promise.all(speakingTime[roomid].map(async (user)=>{
+                const pastTime=(await db.getSpeakingTime(roomid,user.username)).time;
+                time.push({username:user.username,total:user.total+pastTime});
+            }))
+            return time; 
+        }else{
+            return null; 
+        }
+    }
+
+    /*calculate most observed emotion and its duration for each user in a room and return it */
+    async function emotionStats(roomid){
         let emojiStats=await db.emojiStats(roomid);
         let max=0,emotionMajority="";
+        let usersEmotions = {};
         for(let name in emojiStats){
             max=0,emotionMajority="";
             for(let emotion in emojiStats[name]){
@@ -276,24 +290,10 @@ io.on('connect', socket => {
                     emotionMajority=emotion;
                 }
             }
-            console.log(`user ${name} is feeling mostly ${emotionMajority} with a duration of ${max*200}ms`);
+            usersEmotions[name]=[emotionMajority,max*200];
             
         }
-        //eg. emojiStats[username]["happy"]=5; 5*200ms
-    })
-
-    /*calculate total speaking time for each user in a room and return it */
-    async function stats(roomid){
-        let time=[];
-        if(speakingTime[roomid]){
-            await Promise.all(speakingTime[roomid].map(async (user)=>{
-                const pastTime=(await db.getSpeakingTime(roomid,user.username)).time;
-                time.push({username:user.username,total:user.total+pastTime});
-            }))
-            return time;
-        }else{
-            return null;
-        }
+        return usersEmotions;
     }
 
     /*this function takes all speaking times for users in a room and calculated the percentage
