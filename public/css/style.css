@@ -1376,7 +1376,7 @@ ul.primary li:hover > a{
   width: 50%;
   height: 100%;
   border-right: 1px solid white;
-  overflow: scroll;
+  overflow: auto;
 }
 .statisticsScreen .statContent .totalTime .totalTimeList li{
   float: left;
@@ -1388,7 +1388,7 @@ ul.primary li:hover > a{
 .statisticsScreen .statContent .reactions{
   width: 50%;
   height: 100%;
-  overflow: scroll;
+  overflow: auto;
 }
 .statisticsScreen .statContent .reactions li{
   margin: 10px;
