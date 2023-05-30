@@ -10,7 +10,6 @@ const net = require('net');
 
 const http = require('https');
 const fs = require('fs');
-const WebSocket = require('ws');
 
 const db=require('./dbOperations.js');
 
@@ -47,14 +46,6 @@ const isPortInUse=(port)=>{
 const app = express();
 const server = http.createServer(serverConfig, app);
 
-/*Establish new websocket server to use with collaborative editor's y-websocket module */
-const wss = new WebSocket.Server({ server });
-wss.on('connection', (ws) => {
-    // console.log('A user connected via WebSocket');
-    ws.on('close', () => {
-    //   console.log('A user disconnected via WebSocket');
-    });
-});
 
 
 const io = socketio(server);
@@ -203,8 +194,8 @@ io.on('connect', socket => {
     })
 
     // Broadcast the change made in the editor to all connected clients except the sender 
-    socket.on('editor-change', (delta) => {
-        
+    socket.on('editor-change', (delta,roomid) => {
+        docs[roomid]=delta
         socket.broadcast.emit('editor-change', delta);
     });
 

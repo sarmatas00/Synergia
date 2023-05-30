@@ -1,8 +1,4 @@
-import * as Y from 'https://cdn.jsdelivr.net/npm/yjs@13.5.53/+esm'
-import {QuillBinding} from 'https://cdn.jsdelivr.net/npm/y-quill@0.1.5/+esm'
-import {SocketIOProvider} from 'https://cdn.jsdelivr.net/npm/y-socket.io@1.1.0/+esm'
 import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
-import * as yWeb from 'https://cdn.jsdelivr.net/npm/y-websocket@1.5.0/+esm'
 import { gestures } from "./gestures.js"
 const socket = io();
 const myvideo = document.querySelector("#vd1");
@@ -294,15 +290,7 @@ function fitToParent(element,width,height) {            //adjusts quill editors 
 }
 
 
-//create yjs document and connect it with a websocket provider
-function loadDoc(){                 
-    const doc = new Y.Doc()
-    const provider = new yWeb.WebsocketProvider("wss://localhost:3000",roomid,doc)
-    const type= doc.getText(roomid)
 
-    return {type,provider,doc}
-    
-}
 
 function getCursorColor(index) {                                        
     
@@ -835,27 +823,23 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
 
     /*QUILL EDITOR SETUP */
     loadQuill()                                                 //initiate quill editor
-    const {type,provider,doc}=loadDoc()                         //load editor's config
     setMultipleCursors()                                        //set a cursor for the user in the editor
-    const binding= new QuillBinding(type,editor,provider.awareness)                 //bind the editor to the websocket sever, to collaborate with other users
-    docs[roomid]={doc,provider,type,binding}                    //store document info
 
 
     editor.on('text-change', function (delta) {                 //when a change is made in the editor, emit it to other users to update their editors
         if (!applyingChange) {
-            socket.emit('editor-change', delta);
-            socket.emit("store-editor-state",editor.getContents(),roomid);
+            socket.emit('editor-change', editor.getContents(),roomid);
         }
     });
       
       // Receive changes from the server and apply them to the local document
     socket.on('editor-change', function (delta) {
         applyingChange = true;
-        editor.updateContents(delta);
+        editor.setContents(delta);
         applyingChange = false; 
     });        
 
-    //update editor to match other users'
+    //update editor to match other users' if not the first user entering the room
     if(docInfo){
         applyingChange=true;
         editor.setContents(docInfo)

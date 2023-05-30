@@ -1562,6 +1562,12 @@ socket.on('notifyUserGroup',(info)=>{
                 change the html to display the message correctly on the page, because editor messages are already in html form */
                 if(/<([A-Za-z][A-Za-z0-9]*)\b[^>]*>(.*?)<\/\1>/.test(message.text) && flag){            //if message is a file or location(already html form)
                     groupMessageList.lastElementChild.children[1].innerHTML=message.text;
+                    
+                }
+                /*That conditional servers for avoiding duplicate messages, by comparing the last 2 list elements. That is mandatory for
+                editor, location or file messages */
+                if(groupMessageList.lastElementChild.children[1].innerHTML===groupMessageList.lastElementChild.previousElementSibling.children[1].innerHTML){
+                    groupMessageList.lastElementChild.remove()
                 }
             }
             groupMsgUnread[Group]++;                                                
