@@ -1774,7 +1774,6 @@ detectionInterval=setInterval(()=>{
 
 
     //every interval emotions are reset and loged to database 
-    socket.emit('get statistics',roomid);
     for(let sid in connections){
         detection[cName[sid]]["surprised"]=0;detection[cName[sid]]["smile"]=0;detection[cName[sid]]["angry"]=0;detection[cName[sid]]["scared"]=0;detection[cName[sid]]["disgust"]=0;detection[cName[sid]]["sad"]=0;
      }
@@ -1821,7 +1820,7 @@ the last 10 minutes. The modal goes away after 3 sec */
 socket.on("warn speaking",(speakingMuch)=>{
     
     const modal = document.querySelector('#speakingModal');
-    (speakingMuch)?modal.children[0].children[0].innerText="Μονωπολεις στη συζητηση":modal.children[0].children[0].innerText="Εισαι ανενεργος στη συζητηση";
+    (speakingMuch)?modal.children[0].children[0].innerText="Μονωπολείς στη συζήτηση":modal.children[0].children[0].innerText="Είσαι ανενεργός στη συζήτηση";
     modal.style.display="block";
     setTimeout(()=>{
         modal.style.display='none';
@@ -2099,26 +2098,34 @@ socket.on("get statistics",async (time,emotions)=>{
             const exists=document.querySelector(`#${user.username}`);
             if(exists){
                 const seconds = exists.innerHTML.match(/\d+ seconds/g).join("");
-                (seconds.match(/\d/g).join("")<user.total)?exists.innerHTML=`${user.username} --> ${user.total} seconds (${(user.total/60).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`:null;
+                (seconds.match(/\d/g).join("")<user.total)?exists.innerHTML=`<span>${user.username}</span> --> ${user.total} seconds (${(user.total/60).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`:null;
             }else{
                 const newListStat = document.createElement("li");
                 newListStat.setAttribute("id",`${user.username}`);
-                newListStat.innerHTML=`${user.username} --> ${user.total} seconds (${(user.total/60).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`;
+                newListStat.innerHTML=`<span>${user.username}</span> --> ${user.total} seconds (${(user.total/60).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`;
                 timeStat.appendChild(newListStat);
             }
         })
     }
     const emojis = await emotions;
     for(const user in emojis){
-        const exists=document.querySelector(`#${user}EM`);
-        if(exists){
-            const seconds = exists.innerHTML.match(/\d+ seconds/g).join("");
-            (seconds.match(/\d/g).join("")<emojis[user][1]/1000)?exists.innerHTML=`${user} is feeling mostly <span>${emojis[user][0]}</span> with a duration of <span>${(emojis[user][1]/1000).toLocaleString('en-US',{maximumFractionDigits:2})} seconds </span> (${(emojis[user][1]/(1000*60)).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`:null;
-        }else{
-            const newListStat = document.createElement("li");
-            newListStat.setAttribute("id",`${user}EM`);
-            newListStat.innerHTML=`${user} is feeling mostly <span>${emojis[user][0]}</span> with a duration of <span>${(emojis[user][1]/1000).toLocaleString('en-US',{maximumFractionDigits:2})} seconds </span> (${(emojis[user][1]/(1000*60)).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`;
-            reactions.appendChild(newListStat);
+        if(!document.querySelector(`#${user}EM`)){
+            const newH3 = document.createElement("h3");
+            newH3.setAttribute("id",`${user}EM`);
+            newH3.innerText=`${user}`
+            reactions.appendChild(newH3);
+        }
+        for(const emotion of emojis[user]){
+            const exists=document.querySelector(`#${user}${emotion.emotion}`);
+            if(exists){
+                const seconds = exists.innerHTML.match(/\d+ seconds/g).join("");
+                (seconds.match(/\d/g).join("")<emotion.time/1000)?exists.innerHTML=`has been feeling <span>${emotion.emotion}</span> for a duration of <span>${(emotion.time/1000).toLocaleString('en-US',{maximumFractionDigits:2})} seconds </span> (${(emotion.time/(1000*60)).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`:null;
+            }else{
+                const newListStat = document.createElement("li");
+                newListStat.setAttribute("id",`${user}${emotion.emotion}`);
+                newListStat.innerHTML=`has been feeling <span>${emotion.emotion}</span> for a duration of <span>${(emotion.time/1000).toLocaleString('en-US',{maximumFractionDigits:2})} seconds </span> (${(emotion.time/(1000*60)).toLocaleString('en-US',{maximumFractionDigits:2})} minutes)`;
+                reactions.appendChild(newListStat);
+            }
         }
     }
     

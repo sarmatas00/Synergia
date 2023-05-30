@@ -1382,6 +1382,9 @@ ul.primary li:hover > a{
   float: left;
   margin: 0.5em;
 }
+.statisticsScreen .statContent .totalTime .totalTimeList li span{
+  color:#4ecca3;
+}
 .statisticsScreen .statContent .reactions{
   width: 50%;
   height: 100%;
@@ -1392,6 +1395,11 @@ ul.primary li:hover > a{
 }
 .statisticsScreen .statContent .reactions li span{
   color: red;
+}
+.statisticsScreen .statContent .reactions h3{
+  color: #4ecca3;
+  text-align: center;
+  margin: 5px;
 }
 
 

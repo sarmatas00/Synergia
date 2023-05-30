@@ -268,21 +268,19 @@ io.on('connect', socket => {
         }
     }
 
-    /*calculate most observed emotion and its duration for each user in a room and return it */
+    /*calculate emotions observer more than 1 min and their duration for each user in a room and return them */
     async function emotionStats(roomid){
         let emojiStats=await db.emojiStats(roomid);
-        let max=0,emotionMajority="";
+        let tmp,emotionMajority="";
         let usersEmotions = {};
         for(let name in emojiStats){
-            max=0,emotionMajority="";
+            usersEmotions[name]=[];
             for(let emotion in emojiStats[name]){
-                if(emojiStats[name][emotion]>max){
-                    max=emojiStats[name][emotion];
-                    emotionMajority=emotion;
-                }
+                    tmp=emojiStats[name][emotion];
+                    if(tmp*0.2>60){
+                        usersEmotions[name].push({emotion,time:tmp*200});
+                    }
             }
-            usersEmotions[name]=[emotionMajority,max*200];
-            
         }
         return usersEmotions;
     }
