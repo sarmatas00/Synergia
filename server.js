@@ -187,12 +187,6 @@ io.on('connect', socket => {
     })
     
 
-
-    /*store editor content for use in new clients */
-    socket.on("store-editor-state",(content,roomid)=>{
-        docs[roomid]=content
-    })
-
     // Broadcast the change made in the editor to all connected clients except the sender 
     socket.on('editor-change', (delta,roomid) => {
         docs[roomid]=delta
@@ -223,7 +217,7 @@ io.on('connect', socket => {
                 speakingTime[roomid][index].start=Date.now();
             }else{                                              //when he stops speaking
                 speakingTime[roomid][index].total+=Math.floor((Date.now()-speakingTime[roomid][index].start)/1000);             //add time he spoke to total time in seconds 
-                if(speakingTime[roomid].reduce((prev,cur)=>{return prev+cur.total},0)/5>=1){                              //calculate if all users in room have 10 been speaking for 10 minutes
+                if(speakingTime[roomid].reduce((prev,cur)=>{return prev+cur.total},0)/60>=10){                              //calculate if all users in room have 10 been speaking for 10 minutes
                     warnUsers(speakingTime[roomid]);                                                            //warn the users that speak a lot and little
                     speakingTime[roomid].forEach((user)=>{                                                      //update db with the times for each user and restart 10 minutes tracking for the room
                         db.updateSpeakingTime(roomid,user.username,user.total);
