@@ -1516,6 +1516,10 @@ function turnOnEmojis(){
     
     console.log("sid",sid,"  video",video);
     if(!intervalID){
+        faceapi.loadTinyFaceDetectorModel('weights');
+        faceapi.loadFaceLandmarkModel('weights');
+        faceapi.loadFaceRecognitionModel('weights');
+        faceapi.loadFaceExpressionModel('weights');
         intervalID=setInterval(async () => 
         {
         if(emoOn){
@@ -1524,10 +1528,7 @@ function turnOnEmojis(){
             video=document.getElementById(`video${sid}`);
             let emoRem=document.getElementById(`emo${sid}`);
 
-            faceapi.loadTinyFaceDetectorModel('weights');
-        faceapi.loadFaceLandmarkModel('weights');
-        faceapi.loadFaceRecognitionModel('weights');
-        faceapi.loadFaceExpressionModel('weights');
+           
                     const detections = 
                     await faceapi.detectAllFaces(
                     video, 
