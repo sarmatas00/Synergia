@@ -1453,6 +1453,7 @@ function emojiListener(){
         //When emojis are turned off the faceAPI tracking interval is cleared and the emoji icons get a default value
         if(emoOn){
             console.log("emoji off");
+            document.getElementById('Emoji_Display').style.backgroundColor='#d8d8d8';
             emoOn=false;
             startInterval(false);
             clearInterval(intervalID);
@@ -1475,7 +1476,8 @@ function emojiListener(){
         //Emoji tracking is turned on 
         else{
             emoOn=true;
-            console.log("emoON")
+            console.log("emoON");
+            document.getElementById('Emoji_Display').style.backgroundColor='#4ecca3';
             var detection=turnOnEmojis();
 
             //start tracking emotions
@@ -1523,7 +1525,7 @@ function turnOnEmojis(){
         intervalID=setInterval(async () => 
         {
         if(emoOn){
-            
+           
         for(let sid in connections){
             video=document.getElementById(`video${sid}`);
             let emoRem=document.getElementById(`emo${sid}`);

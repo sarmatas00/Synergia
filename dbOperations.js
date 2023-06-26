@@ -189,7 +189,7 @@ async function saveEmojis(room,detection,local){
     for(let sid in detection){
         if(sid==null){sid=local;}
         personEmotions=await getEmojis(room,sid);
-        console.log("runnin the loop for ",sid, "stored value angry",personEmotions["angry"]," this should be added ",detection[sid]["angry"]);
+        
         for(let emotion in detection[sid]){
             personEmotions[emotion]=detection[sid][emotion]+personEmotions[emotion];
             console.log("error point ",personEmotions," detection ", detection);
