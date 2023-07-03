@@ -1469,7 +1469,7 @@ function emojiListener(){
 
             },1000)
             
-        
+            
            
             emojiSID=[];
         }  
@@ -1875,6 +1875,8 @@ async function handListener(){
 
         
         if(handsOn){
+            
+            document.getElementById('HandTrack').style.backgroundColor='#d8d8d8';
             console.log("hands off");
             handsOn=false;
             //startInterval(false);
@@ -1890,6 +1892,7 @@ async function handListener(){
             
             handsOn=true;
             console.log("handsOn");
+            document.getElementById('HandTrack').style.backgroundColor='#4ecca3';
             /*
             handTracking(myvideo);
             for(let sid in connections)
