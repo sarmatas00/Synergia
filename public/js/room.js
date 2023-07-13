@@ -527,9 +527,11 @@ raiseButt.addEventListener('click', () => {
 	{
         clicked=false;
         console.log(handsOn," and we inside false if")
+        if(!handsOn){
        	document.getElementById('raiseHand').style.display = "none";
            document.getElementById('raiseHand').style.visibility = "hidden";
-		rname ='';
+        }
+           rname ='';
 		socket.emit('action', 'raiseOff');
 	
 }
@@ -1904,13 +1906,14 @@ async function handListener(){
                 fp.Gestures.ThumbsUpGesture,
                 ...gestures
               ]
-            const detector1 = await createDetector()
+            let detector1 = await createDetector()
             
             const GE = new fp.GestureEstimator(knownGestures)  
             
            
            handTracking(myvideo,document.getElementById("raiseHand"),detector1,GE,false);
-          
+           document.getElementById(`raiseHand`).style.display = "block";
+           document.getElementById(`raiseHand`).style.visibility='visible';
           for(let sid in connections){
             let detector=await createDetector();
             handTracking(document.getElementById(`video${sid}`),document.getElementById(`raise${sid}`),detector,GE,false);
