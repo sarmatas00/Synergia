@@ -1886,7 +1886,7 @@ async function handListener(){
             //intervalID=null;
             
             document.getElementById('raiseHand').style.display = "none";
-           
+            //document.getElementById('imH').src="img/raisedhand.png";
         }  
         //Hand tracking is turned on 
         else{
@@ -1895,6 +1895,7 @@ async function handListener(){
             handsOn=true;
             console.log("handsOn");
             document.getElementById('HandTrack').style.backgroundColor='#4ecca3';
+            //document.getElementById('imH').src='';
             /*
             handTracking(myvideo);
             for(let sid in connections)
@@ -1914,7 +1915,8 @@ async function handListener(){
            handTracking(myvideo,document.getElementById("raiseHand"),detector1,GE,false);
            document.getElementById(`raiseHand`).style.display = "block";
            document.getElementById(`raiseHand`).style.visibility='visible';
-          for(let sid in connections){
+           
+           for(let sid in connections){
             let detector=await createDetector();
             handTracking(document.getElementById(`video${sid}`),document.getElementById(`raise${sid}`),detector,GE,false);
             document.getElementById(`raise${sid}`).style.display = "block";
@@ -1941,7 +1943,7 @@ var clicked=false;;
 
 async function handTracking(video,element,detector,GE){
     
-   
+   element.innerText='';
     //const ctx = canvas.getContext("2d")
     
   // configure gesture estimator
@@ -1954,8 +1956,11 @@ async function handTracking(video,element,detector,GE){
     const hands = await detector.estimateHands(video, {
       flipHorizontal: true
     })
-
+    if(hands.length===0){
+        element.innerText='';
+    }
     for (const hand of hands) {
+        
       for (const keypoint of hand.keypoints) {
         const name = keypoint.name.split('_')[0].toString().toLowerCase()
         const color = landmarkColors[name]
@@ -1992,13 +1997,35 @@ async function handTracking(video,element,detector,GE){
                 clicked=false;
                 element.innerText = found;
             }else{
-                element.innerText = found;
+                /*
+                switch(found){
+                    case gestureStrings.rock:
+                        element.innerHTML='<img  width="50" height="50" src="img/rock.jpg"> '  
+                    case gestureStrings.dont:
+                        element.innerHTML='<img  width="50" height="50" src="img/dont.jpg"> '  
+                    case gestureStrings.thumbs_up:
+                        element.innerHTML='<img  width="50" height="50" src="img/up.jpg"> '
+                    case gestureStrings.scissors:
+                        element.innerHTML='<img  width="50" height="50" src="img/sci.png"> ' 
+                    
+                    
+
+
+                    }
+                    */
+                   element.style.fontSize="xx-large";
+                   element.innerText=found;
               }
           }
           
           continue
         
-        checkGestureCombination(chosenHand, predictions.poseData,element)
+        if(checkGestureCombination(chosenHand, predictions.poseData,element)===null){
+            element.innerText='';
+
+        }
+      }else{
+        element.innerText='';
       }
 
     }
@@ -2006,7 +2033,7 @@ async function handTracking(video,element,detector,GE){
 
     
     if(handsOn){
-        setTimeout(() => { estimateHands() }, 1000 / config.video.fps)
+        setTimeout(() => { estimateHands() }, 250 / config.video.fps)
     }else{
         element.style.visibility='hidden';
         console.log("turning off element is ",element.id, element.id==="raiseHand");
@@ -2040,12 +2067,12 @@ async function handTracking(video,element,detector,GE){
 function checkGestureCombination(chosenHand, poseData,resultLayer) {
     const addToPairIfCorrect = (chosenHand) => {
       const containsHand = poseData.some(finger => dont[chosenHand].includes(finger[2]))
-      if(!containsHand) return;
+      if(!containsHand) return null;
       pair.add(chosenHand)
     }
 
     addToPairIfCorrect(chosenHand)
-    if(pair.size !== 2) return;
+    if(pair.size !== 2) return null;
     
     resultLayer=document.getElementById("raiseHand");
     resultLayer.innerText = gestureStrings.dont
