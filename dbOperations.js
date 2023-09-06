@@ -192,9 +192,9 @@ async function saveEmojis(room,detection,local){
         
         for(let emotion in detection[sid]){
             personEmotions[emotion]=detection[sid][emotion]+personEmotions[emotion];
-            console.log("error point ",personEmotions," detection ", detection);
+            
         }
-        console.log("new value ",personEmotions["angry"]);
+        
         //operator.set(operator.ref(db,`emojis/${room}/${sid}`),personEmotions);
         operator.update(operator.ref(db,`emojis/${room}/${sid}`),personEmotions);
 
