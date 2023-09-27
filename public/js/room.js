@@ -2,7 +2,6 @@ import QuillCursors from 'https://cdn.jsdelivr.net/npm/quill-cursors@4.0.2/+esm'
 import { gestures } from "./gestures.js"
 const socket = io();
 const myvideo = document.querySelector("#vd1");
-myvideo.style.opacity='1';
 const roomid = params.get("room");
 let username;
 let sd = 1;
@@ -421,13 +420,18 @@ function CopyClassText() {
 }
 
 
-
+var datetime = new Date();
+var today = new Date();
+var date = today.getDate()+'-'+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
+var time = today.getHours() + ":" + today.getMinutes();
+	
 
 
 continueButt.addEventListener('click', () => {
     if (nameField.value == '') return;
     username = nameField.value;
-	teamcont.innerHTML +=  `<div class="username"> ${username} </div>` + '<br>';
+	//teamcont.innerHTML +=  `<div class="username"> ${username} </div>` + '<br>';
+	teamcont.innerHTML += `<div class="username">` + `<i class="fas fa-theater-masks" style="font-size: 24px"></i>` +  `  ${username} ${date} ${time} </div>`;
     overlayContainer.style.visibility = 'hidden';
     document.querySelector("#myname").innerHTML = `${username} (You)`;
     socket.emit("join room", roomid, username);
@@ -514,7 +518,8 @@ raiseButt.addEventListener('click', () => {
     
     if (document.getElementById('raiseHand').style.display == "none")
 	{
-        
+        console.log(handsOn," and we inside true if")
+        clicked=true;
 			document.getElementById('raiseHand').style.display = "block";
             document.getElementById('raiseHand').style.visibility = "visible";
 			rname = username;
@@ -525,10 +530,13 @@ raiseButt.addEventListener('click', () => {
 	}
 	else 
 	{
+        clicked=false;
         console.log(handsOn," and we inside false if")
+        if(!handsOn){
        	document.getElementById('raiseHand').style.display = "none";
-        document.getElementById('raiseHand').style.visibility = "hidden";
-        rname ='';
+           document.getElementById('raiseHand').style.visibility = "hidden";
+        }
+           rname ='';
 		socket.emit('action', 'raiseOff');
 	
 }
@@ -540,18 +548,18 @@ raiseButt.addEventListener('click', () => {
 nodisplaybutt.addEventListener('click', () => {
 
   
-		if (myvideo.style.opacity  == '1') {
+		if (vid.style.visibility  == 'visible') {
         
 			
 			//nodisplaybutt.style.backgroundColor = "#4ECCA3";
            
-			myvideo.style.opacity = '0';
+			vid.style.visibility = 'hidden';
 			socket.emit('action', 'dispOff');
 
 		}
 		else {
         
-			myvideo.style.opacity = '1';
+			vid.style.visibility = 'visible';
 			socket.emit('action', 'dispOn');
 			
 			//nodisplaybutt.style.backgroundColor = "#393e46";
@@ -600,7 +608,9 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
 			ntag.classList.add('nametag');
             //name.classList.add('nametag');
             name.innerHTML = `${cName[sid]}`;
-			teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> `+ '<br>';
+			teamcont.innerHTML += `<div class="username">` + `<i class="fas fa-theater-masks" style="font-size: 24px"></i>` + `  ${cName[sid]} ${date}  </div> ` + '<span style="color:blue;font-size:2" id="time1"> </span>' + '<br>';
+			
+			//teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> `+ '<br>';
 			//emo.classList.add('nametag');
             emo.innerHTML = ` <img id=\"emo${sid}\" src=\"img/neutral.png\" width=\"50px\" height=\"50px\">`;
 			raiseh.innerHTML = ` <img id=\"raisePic${sid}\" src=\"img/raisedhand.png\" width=\"50px\" height=\"50px\">`;
@@ -880,7 +890,9 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
 					
                     ntag.classList.add('nametag');
                     name.innerHTML = `${cName[sid]}`;
-					teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> ` + '<br>';
+					//teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> ` + '<br>';
+					teamcont.innerHTML += `<div class="username">` + `<i class="fas fa-theater-masks" style="font-size: 24px"></i>` + `  ${cName[sid]} ${date} </div> `; 
+					
 					
 					//emo.classList.add('nametag');
 					emo.innerHTML = ` <img id="emo${sid}" src=\"img/neutral.png\" width=\"50px\" height=\"50px\">`;
@@ -1192,7 +1204,7 @@ function showChatRoomDraggable() {
 }
 */
 
-socket.on('message', (msg, sendername, time) => {
+socket.on('message', (msg, sendername, time, dt) => {
     chatRoom.scrollTop = chatRoom.scrollHeight;
     chatRoom.innerHTML += `<div class="message">
     <div class="info">
@@ -1203,6 +1215,22 @@ socket.on('message', (msg, sendername, time) => {
         ${msg}
     </div>
 </div>`
+
+
+	if (msg.includes("left")=== true)
+		{
+			let result = msg.replace("chat", "room");
+			teamcont.innerHTML += `<div class="message">
+			<div class="info">
+        
+				<div class="time">${dt} ${time}</div>
+				</div>
+				<div class="content">
+					${result}
+				</div>
+    
+			</div>`
+		}
 });
 
 
@@ -1339,30 +1367,7 @@ socket.on('action', (msg, sid) => {
         document.querySelector(`#raise${sid}`).style.visibility = 'hidden';
         raiseInfo[sid] = 'off';
     }
-	else if (msg == 'raiseHand2') {
-        console.log(sid + 'raise hand on');
-        if(!handsOn){
-            
-                
-                    document.getElementById(`raise${sid}`).style.display = "block";
-                    document.getElementById(`raise${sid}`).style.visibility = "visible";
-                    rname = username;
-                    //document.getElementById(`imH`).src='img/raisedhand.png';
-                    
-                    
-                    
-            
-        }
-        raiseInfo[sid] = 'on';
-    }
-	 else if (msg == 'raiseOff2') {
-        console.log(sid + 'raise hand off');
-        raiseInfo[sid] = 'off';
-        if(!handsOn){
-            document.querySelector(`#raise${sid}`).style.visibility = 'hidden';
-
-        }
-    }
+	
 	 else if (msg == 'dispOff') {
         console.log(sid + 'display off');
         document.querySelector(`#video${sid}`).style.visibility = 'hidden';
@@ -1703,7 +1708,6 @@ function turnOnEmojis(){
                 //let emo=document.getElementById("iml");
                 //let emoLoc=document.getElementById("iml");
                 //emoLoc.src=source;
-                console.log("emo loc ",source," status ",statusIcons[status]);
                 let emoLoc=document.getElementById("iml");
                 emoLoc.src=source;
                 
@@ -1715,7 +1719,7 @@ function turnOnEmojis(){
                 
                     });
             } else {
-                console.log("No Faces loc")
+                console.log("No Faces")
                 //face.innerHTML = statusIcons.default;
             }		
                   
@@ -1914,7 +1918,7 @@ async function handListener(){
            
             
             handsOn=true;
-            console.log("handsOn",sidsNames[local]);
+            console.log("handsOn");
             document.getElementById('HandTrack').style.backgroundColor='#4ecca3';
             //document.getElementById('imH').src='';
             /*
@@ -1933,13 +1937,13 @@ async function handListener(){
             const GE = new fp.GestureEstimator(knownGestures)  
             
            
-           handTracking(myvideo,document.getElementById("raiseHand"),detector1,GE,false,"loc");
+           handTracking(myvideo,document.getElementById("raiseHand"),detector1,GE,false);
            document.getElementById(`raiseHand`).style.display = "block";
            document.getElementById(`raiseHand`).style.visibility='visible';
            
            for(let sid in connections){
             let detector=await createDetector();
-            handTracking(document.getElementById(`video${sid}`),document.getElementById(`raise${sid}`),detector,GE,false,sid);
+            handTracking(document.getElementById(`video${sid}`),document.getElementById(`raise${sid}`),detector,GE,false);
             document.getElementById(`raise${sid}`).style.display = "block";
             document.getElementById(`raise${sid}`).style.visibility='visible';
           }
@@ -1947,10 +1951,7 @@ async function handListener(){
         
         document.getElementById(`raiseHand`).style.display="block";
         document.getElementById(`raiseHand`).style.visibility='visible'; 
-        for(let sid in connections){
-            document.getElementById(`raise${sid}`).style.display = "block";
-            document.getElementById(`raise${sid}`).style.visibility='visible';
-        }    
+            
            
                   
                
@@ -1963,9 +1964,9 @@ async function handListener(){
     }
 }
 
+var clicked=false;;
 
-
-async function handTracking(video,element,detector,GE,sid){
+async function handTracking(video,element,detector,GE){
     
    element.innerText='';
     //const ctx = canvas.getContext("2d")
@@ -2004,12 +2005,23 @@ async function handTracking(video,element,detector,GE,sid){
 
         
           if(found===gestureStrings.paper ){
+            if(!clicked){
+            console.log("wanna raise");
             
-                   element.innerHTML='<img width="50" height="50"src="img/raisedhand.png">';
-                   socket.emit('action','raiseHand2');
-        
+            socket.emit('action', 'raiseHand');
+            clicked=true;
+           element.innerHTML='<img  width="50" height="50" src="img/raisedhand.png"> '
+            
+            
+            }
           }else{
-            
+            if(clicked){
+                console.log("stop raise");
+                socket.emit('action', 'raiseHand');
+                raiseButt.click();
+                clicked=false;
+                element.innerText = found;
+            }else{
                 /*
                 switch(found){
                     case gestureStrings.rock:
@@ -2026,10 +2038,9 @@ async function handTracking(video,element,detector,GE,sid){
 
                     }
                     */
-                   socket.emit('action','raiseOff2');
                    element.style.fontSize="xx-large";
                    element.innerText=found;
-              
+              }
           }
           
           continue

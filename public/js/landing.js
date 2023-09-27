@@ -27,7 +27,7 @@ const createroomtext = 'Creating Room...';
 createButton.addEventListener('click', (e) => {
     e.preventDefault();
     createButton.disabled = true;
-    createButton.innerHTML = 'Creating Room';
+    createButton.innerHTML = 'Create Room';
     createButton.classList = 'createroom-clicked';
 
     setInterval(() => {

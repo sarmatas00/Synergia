@@ -122,9 +122,9 @@ io.on('connect', socket => {
     socket.on('message', (msg, username, roomid) => {
 		msg=emoji.unemojify(msg, null);
 		msg=emoji.emojify(msg, null);
-        io.to(roomid).emit('message', msg, username, moment().format(
+       io.to(roomid).emit('message', msg, username, moment().format(
             "h:mm a"
-        ));
+        ), moment().format("DD-MM-YYYY"));
     })
 
     
@@ -154,9 +154,9 @@ io.on('connect', socket => {
 
     socket.on('disconnect', () => {
         if (!socketroom[socket.id]) return;
-        socket.to(socketroom[socket.id]).emit('message', `${socketname[socket.id]} left the chat.`, `Bot`, moment().format(
+         socket.to(socketroom[socket.id]).emit('message', `${socketname[socket.id]} left the chat.`, `Bot`, moment().format(
             "h:mm a"
-        ));
+        ), moment().format("DD-MM-YYYY"));
         socket.to(socketroom[socket.id]).emit('remove peer', socket.id);
         var index = rooms[socketroom[socket.id]].indexOf(socket.id);
         rooms[socketroom[socket.id]].splice(index, 1);
