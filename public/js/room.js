@@ -420,13 +420,18 @@ function CopyClassText() {
 }
 
 
-
+var datetime = new Date();
+var today = new Date();
+var date = today.getDate()+'-'+'-'+(today.getMonth()+1)+'-'+today.getFullYear();
+var time = today.getHours() + ":" + today.getMinutes();
+	
 
 
 continueButt.addEventListener('click', () => {
     if (nameField.value == '') return;
     username = nameField.value;
-	teamcont.innerHTML +=  `<div class="username"> ${username} </div>` + '<br>';
+	//teamcont.innerHTML +=  `<div class="username"> ${username} </div>` + '<br>';
+	teamcont.innerHTML += `<div class="username">` + `<i class="fas fa-theater-masks" style="font-size: 24px"></i>` +  `  ${username} ${date} ${time} </div>`;
     overlayContainer.style.visibility = 'hidden';
     document.querySelector("#myname").innerHTML = `${username} (You)`;
     socket.emit("join room", roomid, username);
@@ -603,7 +608,9 @@ function handleVideoOffer(offer, sid, cname, micinf, vidinf, raiseinf, nodispinf
 			ntag.classList.add('nametag');
             //name.classList.add('nametag');
             name.innerHTML = `${cName[sid]}`;
-			teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> `+ '<br>';
+			teamcont.innerHTML += `<div class="username">` + `<i class="fas fa-theater-masks" style="font-size: 24px"></i>` + `  ${cName[sid]} ${date}  </div> ` + '<span style="color:blue;font-size:2" id="time1"> </span>' + '<br>';
+			
+			//teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> `+ '<br>';
 			//emo.classList.add('nametag');
             emo.innerHTML = ` <img id=\"emo${sid}\" src=\"img/neutral.png\" width=\"50px\" height=\"50px\">`;
 			raiseh.innerHTML = ` <img id=\"raisePic${sid}\" src=\"img/raisedhand.png\" width=\"50px\" height=\"50px\">`;
@@ -883,7 +890,9 @@ socket.on('join room', async (conc, cnames, micinfo, videoinfo, docInfo, raisein
 					
                     ntag.classList.add('nametag');
                     name.innerHTML = `${cName[sid]}`;
-					teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> ` + '<br>';
+					//teamcont.innerHTML += `<div class="username">  ${cName[sid]}</div> ` + '<br>';
+					teamcont.innerHTML += `<div class="username">` + `<i class="fas fa-theater-masks" style="font-size: 24px"></i>` + `  ${cName[sid]} ${date} </div> `; 
+					
 					
 					//emo.classList.add('nametag');
 					emo.innerHTML = ` <img id="emo${sid}" src=\"img/neutral.png\" width=\"50px\" height=\"50px\">`;
@@ -1195,7 +1204,7 @@ function showChatRoomDraggable() {
 }
 */
 
-socket.on('message', (msg, sendername, time) => {
+socket.on('message', (msg, sendername, time, dt) => {
     chatRoom.scrollTop = chatRoom.scrollHeight;
     chatRoom.innerHTML += `<div class="message">
     <div class="info">
@@ -1206,6 +1215,22 @@ socket.on('message', (msg, sendername, time) => {
         ${msg}
     </div>
 </div>`
+
+
+	if (msg.includes("left")=== true)
+		{
+			let result = msg.replace("chat", "room");
+			teamcont.innerHTML += `<div class="message">
+			<div class="info">
+        
+				<div class="time">${dt} ${time}</div>
+				</div>
+				<div class="content">
+					${result}
+				</div>
+    
+			</div>`
+		}
 });
 
 
