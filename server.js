@@ -214,7 +214,11 @@ io.on('connect', socket => {
         if(speakingTime[roomid]){
                 const index=speakingTime[roomid].findIndex(user=>user.username===socketname[socket.id]);
             if(isSpeaking){                                     //when he starts speaking, start measuring time
-                speakingTime[roomid][index].start=Date.now();
+                try{
+                    speakingTime[roomid][index].start=Date.now();
+                }catch(e){
+                    console.log("Error storing speaking time",e);
+                }
             }else{                                              //when he stops speaking
                 speakingTime[roomid][index].total+=Math.floor((Date.now()-speakingTime[roomid][index].start)/1000);             //add time he spoke to total time in seconds 
                 if(speakingTime[roomid].reduce((prev,cur)=>{return prev+cur.total},0)/60>=10){                              //calculate if all users in room have 10 been speaking for 10 minutes
