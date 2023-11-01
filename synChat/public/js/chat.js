@@ -188,7 +188,7 @@ socket.on('newPrivateFileMessage', function(info) {
         //get element by id message.user.id and get it's sibling and set it innerhtml to number of message
         var userid = document.getElementById(info.user.id);
         //get the sibling element and sets it's attribute display block
-        label = userid.nextSibling;
+        let label = userid.nextSibling;
         label.setAttribute('style', 'display:block');
         label.innerHTML = "1"
     }
@@ -336,7 +336,7 @@ function private_chat(event) {
         }
         console.log(user_message_dictionary);
     }
-    label = userid.nextSibling;
+    let label = userid.nextSibling;
     label.setAttribute('style', 'display:none');
     socket.emit('privateMessageWindow', {
         id: event.target.id
@@ -630,7 +630,7 @@ socket.on('newPrivateMessage', function(message) {
         //get element by id message.user.id and get it's sibling and set it innerhtml to number of message
         var userid = document.getElementById(message.user.id);
         //get the sibling element and sets it's attribute display block
-        label = userid.nextSibling;
+        let label = userid.nextSibling;
         label.setAttribute('style', 'display:block');
         label.innerHTML = "1"
     }
@@ -807,7 +807,7 @@ socket.on('newPrivateLocationMessage', function(message) {
         //get element by id message.user.id and get it's sibling and set it innerhtml to number of message
         var userid = document.getElementById(message.user.id);
         //get the sibling element and sets it's attribute display block
-        label = userid.nextSibling;
+        let label = userid.nextSibling;
         label.setAttribute('style', 'display:block');
         label.innerHTML = "1"
     }
